@@ -20,6 +20,18 @@ function clozeFace(template, fills) {
   return md2html(template).replace(/@@CZ(\d+)@@/g, (_, i) => fills[Number(i)]);
 }
 
+// options come out of the file in a fixed order, so the answer always sits in
+// the same spot. shuffle them and re-letter a/b/c by their new position.
+function shuffleChoices(mc) {
+  const letters = 'abcdefghijklmnopqrstuvwxyz';
+  const correct = new Set();
+  const options = shuffle(mc.options.slice()).map((o, i) => {
+    if (mc.correct.has(o.label)) correct.add(letters[i]);
+    return { label: letters[i], text: o.text };
+  });
+  return { question: mc.question, explanation: mc.explanation, multi: mc.multi, options, correct };
+}
+
 function renderChoices(mc) {
   const box = $('#choiceBox');
   box.innerHTML = '';
@@ -64,7 +76,7 @@ function renderCard() {
   const surface = s.mode === 'type' ? 'type'
     : (s.mode === 'choice' && mc) ? 'choice'
     : 'flip';
-  s.mc = surface === 'choice' ? mc : null;
+  s.mc = surface === 'choice' ? shuffleChoices(mc) : null;
   s.selected = new Set();
 
   // Build the front HTML, the revealed answer HTML, and the typed grading target.
