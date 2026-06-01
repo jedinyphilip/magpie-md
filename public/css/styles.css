@@ -143,7 +143,9 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .study-config #hintsCfg,
 .study-config #shuffleCfg { flex: 0 1 auto; }            /* two-option toggles - size to content so Mode/Order get the room */
 .study-config .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; width: 100%; }
-.study-config .seg button { padding: 8px 10px; }
+/* min-height keeps one- and two-line buttons the same height without relying on
+   the browser stretching the button (Firefox doesn't always). */
+.study-config .seg button { padding: 8px 10px; line-height: 1.25; min-height: 3.9em; }
 .cfg label { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
 .seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .seg button { background: transparent; color: var(--muted); border: none; padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 600; text-align: center; }
