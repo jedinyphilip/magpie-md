@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Capital Cities",
+    "file": "capitals.md",
+    "description": "World capitals - a quick demo deck"
+  },
+  {
+    "title": "Math & Physics",
+    "file": "math.md",
+    "description": "Demonstrates LaTeX equation rendering ($ and $$)"
+  },
+  {
+    "title": "Multiple Choice Demo",
+    "file": "choices.md",
+    "description": "Single- and multi-answer a/b/c questions"
+  },
+  {
+    "title": "magpie.md - How it works",
+    "file": "about.md",
+    "description": "Learn the format and features using the app itself"
+  }
+]

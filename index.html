@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>magpie.md</title>
+<link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" crossorigin="anonymous" />
+<link rel="stylesheet" href="public/css/styles.css" />
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<header class="topbar">
+  <h1 class="logo" id="homeLink">
+    <svg class="logo-mark" viewBox="-1.7 -40.4 460 460" aria-hidden="true">
+      <path fill="var(--accent)" d="M 2.34 50.635 C -15.235 46.174 121.84 7.106 121.84 7.106 C 148.435 3.235 190.192 5.885 220.624 45.323 C 220.624 45.323 502.341 501.491 501.044 501.047 C 409.303 469.619 392.205 345.14 310.13 305.758 C 275.888 289.328 227.164 309.563 153.502 241.435 C 108.722 200.019 71.08 178.577 91.509 118.583 C 119.786 35.543 15.185 53.895 2.34 50.635 Z"/>
+    </svg>
+    <span>magpie<span class="logo-ext">.md</span></span>
+  </h1>
+  <div class="spacer"></div>
+  <button class="btn ghost icon-btn" id="fullscreenBtn" title="Enter fullscreen" aria-label="Toggle fullscreen">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/>
+    </svg>
+  </button>
+  <button class="btn ghost" id="themeBtn" title="Toggle light / dark theme">Theme</button>
+</header>
+
+<main id="app">
+
+  <!-- home -->
+  <section id="homeView" class="view">
+    <div class="panel" id="decksPanel">
+      <div class="panel-head">
+        <h2>Your decks</h2>
+        <div class="row">
+          <button class="btn" id="importBtn">Import</button>
+          <button class="btn ghost" id="pasteBtn">Paste</button>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept=".md,.markdown,.txt,.tsv,.csv,text/markdown,text/plain" hidden multiple />
+      <ul id="deckList" class="deck-list"></ul>
+      <p id="emptyHint" class="hint hidden">
+        No decks yet. Import a <code>.md</code> file, paste one, or try a sample below.
+      </p>
+    </div>
+
+    <details class="panel" id="samplePanel" open>
+      <summary>Sample decks</summary>
+      <ul id="sampleList" class="deck-list"></ul>
+      <p class="hint" id="sampleHint">Looking for bundled decks...</p>
+    </details>
+
+    <details class="panel format-help">
+      <summary>Markdown format - everything supported</summary>
+
+      <p class="hint">The first <code># heading</code> is the deck title. Cards are separated by
+      <code>===</code>. Within a card, <code>---</code> splits the <strong>front</strong> from the
+      <strong>back</strong>.</p>
+
+      <h4>Basic card</h4>
+<pre><code># Deck title
+
+What is the capital of France?
+---
+Paris
+===
+2 + 2 = ?
+---
+4
+</code></pre>
+
+      <h4>Markdown in the answer</h4>
+      <p class="hint">Backs (and fronts) support <code>**bold**</code>, <code>*italic*</code>,
+      <code>`code`</code>, lists, <code>&gt; quotes</code>, links and fenced code blocks.</p>
+<pre><code>Name the SI base unit of mass.
+---
+The **kilogram** (kg).
+
+- not the gram
+- defined via Planck's constant
+</code></pre>
+
+      <h4>Images &amp; inline SVG</h4>
+      <p class="hint">Standard markdown image syntax, <code>![alt](url)</code>, two ways:</p>
+      <ul class="hint">
+        <li><strong>Link</strong> to it - a full <code>https://</code> URL or a path relative to
+        the page.</li>
+        <li><strong>Embed</strong> it - a <code>data:</code> URI with the image as base64, stored
+        right inside the <code>.md</code> so it travels with the deck and works offline.</li>
+      </ul>
+      <p class="hint">You can also paste raw <code>&lt;svg&gt;...&lt;/svg&gt;</code> straight into a
+      card to draw crisp, scalable graphics inline (scripts and event handlers are stripped for
+      safety). Images and SVG scale to fit the card.</p>
+<pre><code>Which structure is this?
+
+![A diagram of a neuron](https://example.com/neuron.png)
+---
+A neuron.
+===
+Embedded, no external file:
+
+![red dot](data:image/png;base64,iVBORw0KGgoAAA...ABJRU5ErkJggg==)
+---
+A single red pixel.
+</code></pre>
+
+      <h4>LaTeX math (KaTeX)</h4>
+      <p class="hint">Inline with <code>$ ... $</code> or <code>\( ... \)</code>. Display with
+      <code>$$ ... $$</code> or <code>\[ ... \]</code>.</p>
+<pre><code>State the quadratic formula for $ax^2+bx+c=0$.
+---
+$$x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$$
+</code></pre>
+
+      <h4>Multiple choice (single &amp; multi answer)</h4>
+      <p class="hint">Put <code>a)</code>, <code>b)</code>, ... (or <code>a.</code>, <code>b.</code>)
+      options on the front, and the correct letter(s) on the <em>first line</em> of the back -
+      <code>b</code> for one answer, <code>b, c</code> for several. Lines after that show as an
+      explanation. Pick with a click or the <code>a</code>-<code>z</code> keys.</p>
+<pre><code>Which of these are prime?
+a) 4
+b) 5
+c) 7
+d) 9
+---
+b, c
+4 and 9 are composite.
+</code></pre>
+
+      <h4>Cloze deletions</h4>
+      <p class="hint">Wrap the words to hide in <code>{{ ... }}</code>. The card shows the
+      sentence with those words blanked. Revealing fills them back in. Add a hint with
+      <code>{{answer::hint}}</code>. In <em>Type answer</em> mode you type the missing word and
+      it's graded like any typed answer. Otherwise reveal and self-grade. Anything after
+      <code>---</code> is shown as extra context.</p>
+<pre><code>The mitochondria is the {{powerhouse}} of the {{cell::organelle}}.
+---
+A favourite exam factoid.
+</code></pre>
+      <p class="hint">Anki's <code>{{c1::...}}</code> group syntax is accepted too. On import a note
+      with several groups becomes one card per group, just like in Anki.</p>
+
+      <h4>Importing from Anki</h4>
+      <p class="hint">In Anki choose <em>File &rarr; Export &rarr; Notes in Plain Text (.txt)</em>,
+      then import or paste that file here. magpie reads the tab/CSV export, converts basic
+      formatting (bold, italics, line breaks, images, cloze) to markdown, and turns it into an
+      ordinary deck you can edit and re-export. One note per row. <code>Front</code>/<code>Back</code>
+      become the two faces, and cloze notes stay cloze.</p>
+      <p class="hint">Media isn't part of that text export, so image/audio references won't resolve
+      unless you embed them yourself. Packaged <code>.apkg</code> files (zipped database) aren't
+      supported - export as plain text instead.</p>
+
+      <h4>Saved progress (in exports)</h4>
+      <p class="hint"><em>Export .md + progress</em> appends a hidden comment per studied card. It
+      renders invisibly on GitHub and is read back on import, so your stats travel with the deck.</p>
+<pre><code>Paris
+---
+The capital of France.
+&lt;!-- magpie seen=4 correct=3 wrong=1 last=right --&gt;
+</code></pre>
+    </details>
+  </section>
+
+  <!-- paste -->
+  <section id="pasteView" class="view hidden">
+    <div class="panel">
+      <div class="panel-head"><h2>Paste markdown deck</h2></div>
+      <textarea id="pasteArea" class="paste-area" placeholder="# Deck title&#10;&#10;Front&#10;---&#10;Back&#10;===&#10;..."></textarea>
+      <div class="row end">
+        <button class="btn ghost" id="pasteCancel">Cancel</button>
+        <button class="btn" id="pasteImport">Import deck</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- edit -->
+  <section id="editView" class="view hidden">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Edit deck</h2>
+        <button class="btn ghost mini" id="editToggle" title="Show full base64 &amp; SVG">…</button>
+      </div>
+      <textarea id="editArea" class="paste-area"></textarea>
+      <p class="hint">Paste an image to embed it as base64. Long base64 and inline SVG are shown
+      truncated as <code>⟪…⟫</code>. Toggle <code>…</code> to see them in full. Editing a card's
+      question starts that card's progress over. Editing the answer keeps it.</p>
+      <div class="row end">
+        <button class="btn ghost" id="editCancel">Cancel</button>
+        <button class="btn" id="editSave">Save changes</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- deck detail -->
+  <section id="deckView" class="view hidden">
+    <div class="deck-topbar">
+      <button class="btn ghost back" id="deckBack">All decks</button>
+      <div class="row">
+        <button class="btn ghost" id="editDeck">Edit</button>
+        <button class="btn ghost" id="exportPlain">Export .md</button>
+        <button class="btn ghost" id="exportProgress">Export .md + progress</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2 id="deckTitle">Deck</h2>
+        <div class="row">
+          <button class="btn ghost danger" id="resetProgress">Reset progress</button>
+          <button class="btn ghost danger" id="deleteDeck">Delete</button>
+        </div>
+      </div>
+      <div class="stats-grid" id="deckStats"></div>
+
+      <div class="study-config">
+        <div class="cfg">
+          <label>Mode</label>
+          <div class="seg" id="modeSeg">
+            <button data-mode="flip" class="active">Flip &amp; grade</button>
+            <button data-mode="choice">Choice</button>
+            <button data-mode="type">Type answer</button>
+          </div>
+        </div>
+        <div class="cfg" id="hintsCfg">
+          <label>Hints</label>
+          <div class="seg" id="hintsSeg">
+            <button data-hints="show" class="active">Show</button>
+            <button data-hints="hide">Hide</button>
+          </div>
+        </div>
+        <div class="cfg">
+          <label>Order</label>
+          <div class="seg" id="orderSeg">
+            <button data-order="weighted" class="active">Weighted</button>
+            <button data-order="shuffle">Shuffle</button>
+            <button data-order="original">Original</button>
+          </div>
+        </div>
+      </div>
+      <div class="cfg cfg-cards">
+        <label>Cards <span class="count-value" id="countValue"></span></label>
+        <input type="range" id="countRange" min="1" step="1" value="1" />
+      </div>
+      <p class="hint subset-hint hidden" id="subsetHint">Studying a subset: <em>Weighted</em> picks the cards you know least, <em>Shuffle</em> picks at random, <em>Original</em> takes them in order.</p>
+
+      <div class="row">
+        <button class="btn big" id="startStudy">Study</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- study -->
+  <section id="studyView" class="view hidden">
+    <div class="study-top">
+      <button class="btn ghost" id="quitStudy">End session</button>
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <span class="counter" id="studyCounter"></span>
+    </div>
+
+    <div class="card-stage">
+      <div class="flashcard" id="flashcard">
+        <div class="face front" id="cardFront"></div>
+        <div class="divider" id="cardDivider"></div>
+        <div class="face back hidden" id="cardBack"></div>
+        <div class="card-badge" id="cardBadge"></div>
+      </div>
+
+      <!-- type mode input -->
+      <div id="typeBox" class="type-box hidden">
+        <input type="text" id="typeInput" placeholder="Type your answer, then Enter..." autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+        <div class="type-hint" id="typeHint"></div>
+      </div>
+
+      <!-- multiple-choice options -->
+      <div id="choiceBox" class="choice-box hidden"></div>
+    </div>
+
+    <div class="study-actions" id="studyActions">
+      <button class="btn big" id="revealBtn">Show answer (Space)</button>
+      <button class="btn big hidden" id="continueBtn">Continue (Space)</button>
+      <div class="grade-row hidden" id="gradeRow">
+        <button class="btn wrong" id="gradeWrong">Wrong (1)</button>
+        <button class="btn right" id="gradeRight">Correct (2)</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- summary -->
+  <section id="summaryView" class="view hidden">
+    <div class="panel center">
+      <h2>Session complete</h2>
+      <div class="stats-grid big-stats" id="summaryStats"></div>
+      <div class="row center">
+        <button class="btn" id="studyAgain">Study again</button>
+        <button class="btn ghost" id="summaryBack">Back to deck</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <span>All data lives in your browser. <span id="storageNote"></span></span>
+  <a href="https://github.com/jedinyphilip/magpie-md" target="_blank" rel="noopener">Source on GitHub</a>
+</footer>
+
+<!-- scripts in load order - no modules, so file:// works -->
+<script src="public/js/src/util.js"></script>
+<script src="public/js/src/config.js"></script>
+<script src="public/js/src/markdown.js"></script>
+<script src="public/js/src/deck.js"></script>
+<script src="public/js/src/samples.js"></script>
+<script src="public/js/src/study.js"></script>
+<script src="public/js/src/views.js"></script>
+<script src="public/js/app.js"></script>
+</body>
+</html>

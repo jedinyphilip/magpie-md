@@ -1,0 +1,26 @@
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs
+*.log
+
+# Optional tooling added later (this app itself has no build step / deps)
+node_modules/
+npm-debug.log*
+.env
+.env.local
+
+# Personal decks stay local - only the curated sample decks are tracked.
+public/decks/*
+!public/decks/decks.json
+!public/decks/about.md
+!public/decks/capitals.md
+!public/decks/choices.md
+!public/decks/math.md
