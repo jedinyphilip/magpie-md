@@ -76,7 +76,7 @@ function renderCard() {
   const surface = s.mode === 'type' ? 'type'
     : (s.mode === 'choice' && mc) ? 'choice'
     : 'flip';
-  s.mc = surface === 'choice' ? shuffleChoices(mc) : null;
+  s.mc = surface === 'choice' ? (settings.shuffleAnswers === 'on' ? shuffleChoices(mc) : mc) : null;
   s.selected = new Set();
 
   // Build the front HTML, the revealed answer HTML, and the typed grading target.

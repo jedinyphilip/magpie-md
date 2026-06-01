@@ -140,7 +140,8 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 
 .study-config { display: flex; gap: 18px; margin: 8px 0 6px; }
 .study-config .cfg { flex: 1; min-width: 0; }            /* groups split the row evenly: 50/50 for two */
-.study-config #hintsCfg { flex: 0 1 auto; }              /* Hints only has Show/Hide - size to content so Mode/Order get the room */
+.study-config #hintsCfg,
+.study-config #shuffleCfg { flex: 0 1 auto; }            /* two-option toggles - size to content so Mode/Order get the room */
 .study-config .seg { display: flex; width: 100%; }
 .study-config .seg button { flex: 1; padding: 8px 10px; }
 .cfg label { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }

@@ -141,6 +141,8 @@ function syncSegs() {
   $$('#orderSeg button').forEach((b) => b.classList.toggle('active', b.dataset.order === settings.order));
   $$('#hintsSeg button').forEach((b) => b.classList.toggle('active', b.dataset.hints === settings.hints));
   $('#hintsCfg').classList.toggle('hidden', settings.mode !== 'flip');  // hints only matter in flip
+  $$('#shuffleSeg button').forEach((b) => b.classList.toggle('active', b.dataset.shuffle === settings.shuffleAnswers));
+  $('#shuffleCfg').classList.toggle('hidden', settings.mode !== 'choice');  // only choice shows options
 
   // count slider: top of the range = whole deck ("all"), below = a subset
   const total = currentParsed.cards.length;
