@@ -142,11 +142,11 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .study-config .cfg { flex: 1; min-width: 0; }            /* groups split the row evenly: 50/50 for two */
 .study-config #hintsCfg,
 .study-config #shuffleCfg { flex: 0 1 auto; }            /* two-option toggles - size to content so Mode/Order get the room */
-.study-config .seg { display: flex; width: 100%; }
+.study-config .seg { display: flex; width: 100%; align-items: stretch; }
 .study-config .seg button { flex: 1; padding: 8px 10px; }
 .cfg label { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
 .seg { display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-.seg button { background: transparent; color: var(--muted); border: none; padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.seg button { background: transparent; color: var(--muted); border: none; padding: 8px 14px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-align: center; }
 .seg button.active { background: var(--accent); color: #fff; }
 .seg button:disabled { opacity: .35; cursor: not-allowed; }
 .subset-hint { margin: 8px 0 0; }
