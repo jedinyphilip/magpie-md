@@ -328,7 +328,8 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .print-config { display: flex; flex-wrap: wrap; gap: 14px 18px; margin: 8px 0 4px; }
 .print-deck { color: var(--muted); font-weight: 400; }
 .print-dims .dims { display: flex; align-items: center; gap: 8px; color: var(--muted); }
-.print-dims input { width: 76px; padding: 8px 10px; font: inherit; font-size: 14px; text-align: center;
+/* same type and padding as a .seg button, so the fields and the toggles line up */
+.print-dims input { width: 76px; padding: 8px 10px; font: inherit; font-size: 13px; line-height: 15px; text-align: center;
   color: var(--text); background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; }
 .print-dims input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* no spinner arrows: the fields are typed into, not nudged */
@@ -375,4 +376,8 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
   .ppage { transform: none !important; box-shadow: none; break-after: page; }
   .ppage-wrap:last-child .ppage { break-after: auto; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+@media (max-width: 600px) {
+  .print-dims input { padding: 10px; }          /* keep matching the taller seg buttons */
 }
