@@ -87,7 +87,9 @@ function renderCard() {
   if (cloze) {
     // Blank the deletions on the front, fill them on the back; text after ---
     // (Anki's "Extra") shows as added context below the answer.
-    frontHtml = clozeFace(cloze.template, cloze.blanks);
+    // Flip with Hints: Hide drops the {{answer::hint}} hints, like it drops MC options
+    const hideHints = s.mode === 'flip' && settings.hints === 'hide';
+    frontHtml = clozeFace(cloze.template, hideHints ? cloze.answers.map(() => '<span class="cloze">[ … ]</span>') : cloze.blanks);
     backHtml = clozeFace(cloze.template, cloze.reveals);
     if (card.back) backHtml += md2html(card.back);
     s.typeTarget = cloze.answers.map((a) => a.text).join('\n');

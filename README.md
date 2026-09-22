@@ -180,6 +180,10 @@ Modes a deck can't use are greyed out: *Choice* needs multiple-choice cards, and
 *Type answer* needs answers in words (a deck whose answers are all pictures has
 nothing to type). Your chosen mode is kept for the decks that do support it.
 
+**Hints** (Flip & grade only). *Show* puts a multiple-choice card's options on the
+front, along with any cloze hints (`{{answer::hint}}`). *Hide* leaves them off, so
+you recall the answer unaided. It's greyed out for decks that have neither.
+
 **Order.** *Weighted* (unseen and previously-wrong cards first), *Shuffle*, or
 *Original*.
 

@@ -218,17 +218,19 @@ function parseCloze(card) {
   return { template, answers, blanks, reveals };
 }
 
-// Which study modes a deck's cards can use. Flip always works; Choice needs at
-// least one multiple-choice card, Type answer at least one answer in words
-// (cloze and MC answers count, a back that is only a picture doesn't).
-function modeSupport(cards) {
+// What a deck's cards can use. Modes: Flip always works; Choice needs at least
+// one multiple-choice card, Type answer at least one answer in words (cloze and
+// MC answers count, a back that is only a picture doesn't). Hints needs
+// something to show or hide: MC options or a cloze {{answer::hint}}.
+function deckSupport(cards) {
   const words = (md) => md.replace(/<svg\b[\s\S]*?<\/svg>/gi, '').replace(/!\[[^\]]*\]\([^)]*\)/g, '').trim() !== '';
-  const ok = { flip: true, choice: false, type: false };
+  const ok = { flip: true, choice: false, type: false, hints: false };
   for (const c of cards) {
     const cloze = parseCloze(c);
-    if (!cloze && parseChoices(c)) ok.choice = ok.type = true;
+    if (!cloze && parseChoices(c)) ok.choice = ok.type = ok.hints = true;
     else if (cloze || words(c.back)) ok.type = true;
-    if (ok.choice && ok.type) break;
+    if (cloze && cloze.answers.some((a) => a.hint)) ok.hints = true;
+    if (ok.choice && ok.type && ok.hints) break;
   }
   return ok;
 }
