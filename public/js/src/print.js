@@ -10,6 +10,7 @@ const PAPER = { a4: { w: 210, h: 297, name: 'A4' }, letter: { w: 215.9, h: 279.4
 const PRINT_MARGIN = 8;                          // mm; most printers can't reach the edge
 const CARD_PAD = 4;                              // mm inside each face
 const MIN_CARD_W = 40;                           // mm; narrower cards are too cramped for text
+const MIN_IMAGE_SCALE = 0.5;                     // images print at least half their natural size, so text in them stays legible
 const DUPLEX_GAP = 4;                            // mm; a slightly shifted back still lands on its card
 const EPS = 0.01;
 
@@ -37,19 +38,22 @@ function imagesLoaded(el) {
 
 // Card widths that tile the printable width: 1, 2, 3 or 4 printed pieces
 // (with their gaps) fill a row exactly, so columns of cards leave no strips.
+// Plus one as long as the printable height, laid sideways, for big pictures.
 // A fold-over piece is two cards wide.
-function cardWidths(uw, fold, gap) {
+function cardWidths(uw, uh, fold, gap) {
   const out = [];
-  for (let k = 1; k <= 4; k++) {
-    const piece = (uw - (k - 1) * gap) / k;
+  const add = (piece) => {
     const w = Math.floor((fold ? piece / 2 : piece) * 10) / 10;
-    if (w >= MIN_CARD_W) out.push(w);
-  }
+    if (w >= MIN_CARD_W && !out.includes(w)) out.push(w);
+  };
+  for (let k = 1; k <= 4; k++) add((uw - (k - 1) * gap) / k);
+  add(uh);
   return out.sort((a, b) => a - b);
 }
 
-// Content height (mm) of every card face at every candidate width, laid out
-// in one pass in a hidden stage.
+// For every card and candidate width: the content height (mm) of its taller
+// face, and how small its images come out (shown width / natural width),
+// laid out in one pass in a hidden stage.
 async function measureFaces(faces, widths, stage) {
   stage.innerHTML = '<div style="width:100mm"></div>';
   const pxPerMm = stage.firstChild.getBoundingClientRect().width / 100;
@@ -71,27 +75,37 @@ async function measureFaces(faces, widths, stage) {
   stage.appendChild(frag);
   await imagesLoaded(stage);
   const need = faces.map(() => ({}));
-  for (const b of boxes) need[b.i][b.w] = Math.max(need[b.i][b.w] || 0, b.el.getBoundingClientRect().height / pxPerMm);
+  for (const b of boxes) {
+    const n = need[b.i][b.w] || (need[b.i][b.w] = { h: 0, img: 1 });
+    n.h = Math.max(n.h, b.el.getBoundingClientRect().height / pxPerMm);
+    for (const img of b.el.querySelectorAll('img')) {
+      if (img.naturalWidth) n.img = Math.min(n.img, img.getBoundingClientRect().width / img.naturalWidth);
+    }
+  }
   stage.innerHTML = '';
   return need;
 }
 
 // Smallest card (by area) that fits the content and stays card-shaped (height
-// 0.55-1.25x the width), and whose printed piece fits on the page. Content too
-// long for any of those gets the widest card, as tall as the page allows,
-// shrunk if even that isn't enough.
+// 0.55-1.25x the width), and whose printed piece fits on the page. Only widths
+// that show the card's images legibly count; if none do, the widest one.
+// Content too long for any of those gets the widest card, as tall as the page
+// allows, shrunk if even that isn't enough.
 function cardSize(need, widths, fits) {
+  const onPage = widths.filter((w) => fits(w, 1));
+  const legible = onPage.filter((w) => need[w].img >= MIN_IMAGE_SCALE);
+  const usable = legible.length ? legible : onPage.slice(-1);
   let best = null;
-  for (const w of widths) {
-    const h = Math.ceil(Math.max(need[w] + 2 * CARD_PAD, w * 0.55));
+  for (const w of usable) {
+    const h = Math.ceil(Math.max(need[w].h + 2 * CARD_PAD, w * 0.55));
     if (h > w * 1.25 || !fits(w, h)) continue;
     if (!best || w * h < best.w * best.h) best = { w, h, scale: 1 };
   }
   if (best) return best;
-  const w = widths.filter((x) => fits(x, 1)).pop();
+  const w = usable[usable.length - 1];
   let maxH = 1;
   while (fits(w, maxH + 1)) maxH++;
-  const h = Math.ceil(need[w] + 2 * CARD_PAD);
+  const h = Math.ceil(need[w].h + 2 * CARD_PAD);
   return h <= maxH ? { w, h, scale: 1 } : { w, h: maxH, scale: (maxH - 2 * CARD_PAD) / (h - 2 * CARD_PAD) };
 }
 
@@ -224,7 +238,7 @@ async function buildPrintView() {
 
   await mediaReady;                              // the deck's images
   const faces = currentParsed.cards.map(printFaces);
-  const widths = cardWidths(paper.w - 2 * PRINT_MARGIN, fold, fold ? 0 : DUPLEX_GAP);
+  const widths = cardWidths(paper.w - 2 * PRINT_MARGIN, paper.h - 2 * PRINT_MARGIN, fold, fold ? 0 : DUPLEX_GAP);
   const need = await measureFaces(faces, widths, $('#printMeasure'));
   if (job !== printJob) return;
   const layout = layoutCards(faces, need, widths, paper, fold);

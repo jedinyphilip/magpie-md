@@ -183,8 +183,11 @@ scale at 100%.
   gap between cards absorbs a printer that doesn't line both sides up exactly.
 
 Every card gets the smallest size that fits its front and back: a short question gets
-a small card, a card with a big image or a long answer a larger one. Card widths are
-fractions of the printable width, so cards fill whole rows. The cards are then packed
+a small card, a card with a big image or a long answer a larger one. Pictures print at
+least half their natural size, so text in them (screenshots, rendered notes) stays
+readable. A card with a big picture gets a bigger card, up to one laid sideways
+across the page. Card widths are fractions of the printable width, so cards fill whole
+rows. The cards are then packed
 onto the pages largest first, each placed where it leaves the least unused space and
 turned sideways when that fits better. Each card carries its number in the corner, on
 both sides.
