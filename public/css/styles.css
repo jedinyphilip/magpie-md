@@ -141,7 +141,8 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .study-config { display: flex; gap: 18px; margin: 8px 0 6px; }
 .study-config .cfg { flex: 1; min-width: 0; }            /* groups split the row evenly: 50/50 for two */
 .study-config #hintsCfg,
-.study-config #shuffleCfg { flex: 0 1 auto; }            /* two-option toggles - size to content so Mode/Order get the room */
+.study-config #shuffleCfg,
+.study-config #sessionCfg { flex: 0 1 auto; }            /* two-option toggles - size to content so Mode/Order get the room */
 .study-config .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; width: 100%; }
 /* min-height keeps one- and two-line buttons the same height without relying on
    the browser stretching the button (Firefox doesn't always). */
@@ -152,6 +153,7 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .seg button.active { background: var(--accent); color: #fff; }
 .seg button:disabled { opacity: .35; cursor: not-allowed; }
 .subset-hint { margin: 8px 0 0; }
+.summary-missed { margin: 12px auto 0; max-width: 60ch; }
 
 .cfg-cards { margin-top: 14px; }
 .cfg-cards input[type=range] { display: block; width: 100%; accent-color: var(--accent); cursor: pointer; margin-top: 8px; }

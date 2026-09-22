@@ -90,6 +90,9 @@ async function init() {
   $$('#shuffleSeg button').forEach((b) => b.addEventListener('click', () => {
     settings.shuffleAnswers = b.dataset.shuffle; saveSettings(); syncSegs();
   }));
+  $$('#sessionSeg button').forEach((b) => b.addEventListener('click', () => {
+    settings.session = b.dataset.session; saveSettings(); syncSegs();
+  }));
   $('#countRange').addEventListener('input', () => {
     const total = currentParsed.cards.length;
     const v = parseInt($('#countRange').value, 10);

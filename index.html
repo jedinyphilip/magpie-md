@@ -6,7 +6,7 @@
 <title>magpie.md</title>
 <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" crossorigin="anonymous" />
-<link rel="stylesheet" href="public/css/styles.css?v=6" />
+<link rel="stylesheet" href="public/css/styles.css?v=7" />
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -250,12 +250,20 @@ The capital of France.
             <button data-order="original">Original</button>
           </div>
         </div>
+        <div class="cfg" id="sessionCfg">
+          <label>Session</label>
+          <div class="seg" id="sessionSeg">
+            <button data-session="once" class="active">One pass</button>
+            <button data-session="cram">Cram</button>
+          </div>
+        </div>
       </div>
       <div class="cfg cfg-cards">
         <label>Cards <span class="count-value" id="countValue"></span></label>
         <input type="range" id="countRange" min="1" step="1" value="1" />
       </div>
       <p class="hint subset-hint hidden" id="subsetHint">Studying a subset: <em>Weighted</em> picks the cards you know least, <em>Shuffle</em> picks at random, <em>Original</em> takes them in order.</p>
+      <p class="hint subset-hint hidden" id="cramHint">Cram: a card you miss comes back a few cards later, and the session only ends once you've got every card right.</p>
 
       <div class="row">
         <button class="btn big" id="startStudy">Study</button>
@@ -304,6 +312,7 @@ The capital of France.
     <div class="panel center">
       <h2>Session complete</h2>
       <div class="stats-grid big-stats" id="summaryStats"></div>
+      <p class="hint summary-missed hidden" id="summaryMissed"></p>
       <div class="row center">
         <button class="btn" id="studyAgain">Study again</button>
         <button class="btn ghost" id="summaryBack">Back to deck</button>
@@ -320,16 +329,16 @@ The capital of France.
 
 <!-- scripts in load order - no modules, so file:// works. public/vendor/ (sql.js, zstd)
      is loaded on demand by apkg.js -->
-<script src="public/js/src/util.js?v=6"></script>
-<script src="public/js/src/config.js?v=6"></script>
-<script src="public/js/src/store.js?v=6"></script>
-<script src="public/js/src/media.js?v=6"></script>
-<script src="public/js/src/markdown.js?v=6"></script>
-<script src="public/js/src/deck.js?v=6"></script>
-<script src="public/js/src/apkg.js?v=6"></script>
-<script src="public/js/src/samples.js?v=6"></script>
-<script src="public/js/src/study.js?v=6"></script>
-<script src="public/js/src/views.js?v=6"></script>
-<script src="public/js/app.js?v=6"></script>
+<script src="public/js/src/util.js?v=7"></script>
+<script src="public/js/src/config.js?v=7"></script>
+<script src="public/js/src/store.js?v=7"></script>
+<script src="public/js/src/media.js?v=7"></script>
+<script src="public/js/src/markdown.js?v=7"></script>
+<script src="public/js/src/deck.js?v=7"></script>
+<script src="public/js/src/apkg.js?v=7"></script>
+<script src="public/js/src/samples.js?v=7"></script>
+<script src="public/js/src/study.js?v=7"></script>
+<script src="public/js/src/views.js?v=7"></script>
+<script src="public/js/app.js?v=7"></script>
 </body>
 </html>

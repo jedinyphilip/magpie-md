@@ -12,6 +12,8 @@ async function startStudy() {
     ? ordered
     : ordered.slice(0, Math.min(parseInt(settings.count, 10), ordered.length));
   session = { queue, i: 0, revealed: false, mode: settings.mode, right: 0, wrong: 0, prog };
+  // cram: missed cards go back into the queue until every card has been answered right
+  if (settings.session === 'cram') Object.assign(session, { cram: true, total: queue.length, learned: 0, misses: new Map() });
   show('studyView');
   renderCard();
 }
@@ -110,8 +112,13 @@ function renderCard() {
     backHtml = md2html(backMd);
   }
 
-  $('#progressBar').style.width = `${(s.i / s.queue.length) * 100}%`;
-  $('#studyCounter').textContent = `${s.i + 1} / ${s.queue.length}`;
+  if (s.cram) {
+    $('#progressBar').style.width = `${(s.learned / s.total) * 100}%`;
+    $('#studyCounter').textContent = `${s.learned} / ${s.total} learned`;
+  } else {
+    $('#progressBar').style.width = `${(s.i / s.queue.length) * 100}%`;
+    $('#studyCounter').textContent = `${s.i + 1} / ${s.queue.length}`;
+  }
 
   $('#cardFront').innerHTML = frontHtml;
   $('#cardBack').innerHTML = backHtml;
@@ -254,6 +261,14 @@ function grade(correct) {
   s.prog[card.key] = st;
   saveJSON(LS_PROGRESS(currentDeckId), s.prog);
 
+  if (s.cram && correct) s.learned++;
+  else if (s.cram) {
+    // back in 3-5 cards (or straight away when fewer are left)
+    s.misses.set(card, (s.misses.get(card) || 0) + 1);
+    const gap = Math.min(s.queue.length - s.i - 1, 3 + Math.floor(Math.random() * 3));
+    s.queue.splice(s.i + 1 + gap, 0, card);
+  }
+
   s.i++;
   renderCard();
 }
@@ -266,6 +281,28 @@ function finishSession() {
     ['Reviewed', total], ['Correct', s.right], ['Wrong', s.wrong],
     ['Accuracy', total ? Math.round((s.right / total) * 100) + '%' : '-'],
   ].map(([lbl, num]) => `<div class="stat"><div class="num">${num}</div><div class="lbl">${lbl}</div></div>`).join('');
+
+  const missed = $('#summaryMissed');
+  missed.classList.toggle('hidden', !s.cram);
+  if (s.cram) {
+    const worst = [...s.misses].sort((a, b) => b[1] - a[1]);
+    const shown = worst.slice(0, 5).map(([c, n]) => `${cardLabel(c)} (${n}×)`).join(', ');
+    missed.textContent = !worst.length ? 'Every card right the first time.'
+      : 'Most missed: ' + shown + (worst.length > 5 ? `, and ${worst.length - 5} more` : '') + '.';
+  }
   show('summaryView');
+}
+
+// a short plain-text name for a card: its front's first line (images by alt
+// text, cloze blanks filled in), or the back when the front is only a picture
+function cardLabel(card) {
+  const plain = (md) => ((md || '')
+    .replace(/<svg\b[\s\S]*?<\/svg>/gi, '')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\{\{(?:c\d+::)?(.+?)\}\}/g, (_, body) => body.split('::')[0])
+    .replace(/[*_`#>]/g, '')
+    .split('\n').map((l) => l.trim()).find(Boolean) || '');
+  const text = plain(card.front) || plain(card.back) || 'untitled card';
+  return text.length > 40 ? text.slice(0, 39).trimEnd() + '…' : text;
 }
 

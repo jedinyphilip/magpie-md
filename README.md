@@ -31,6 +31,8 @@ smaller batch.
 
 ## What's new
 
+- **Cram mode.** Set *Session* to *Cram* and missed cards keep coming back a few
+  cards later until you've got every one right.
 - **Anki `.apkg` import and export.** Import packages from any Anki version (including
   the zstd-compressed format of Anki 2.1.50+), with their images. Export any deck as an
   `.apkg` that Anki can import, images included.
@@ -180,6 +182,12 @@ option text is accepted.
 **Cards.** *All* by default. Pick a number to study just that many. They come off
 the top of the chosen order, so *Weighted* gives you the cards you know least,
 *Shuffle* a random sample, and *Original* the first few.
+
+**Session.** *One pass* shows each card once. *Cram* keeps going until you know them
+all: a card you get wrong comes back about three to five cards later, and the session
+ends only once every card has been answered right. The counter shows how many are
+learned so far, and the summary lists the cards you missed most. It works with any
+mode and with a subset from *Cards*.
 
 **Keyboard.** `Space`/`Enter` reveals. `1` or Left marks wrong, `2` or Right marks
 correct.

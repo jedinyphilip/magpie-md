@@ -149,6 +149,8 @@ function syncSegs() {
   $('#hintsCfg').classList.toggle('hidden', settings.mode !== 'flip');  // hints only matter in flip
   $$('#shuffleSeg button').forEach((b) => b.classList.toggle('active', b.dataset.shuffle === settings.shuffleAnswers));
   $('#shuffleCfg').classList.toggle('hidden', settings.mode !== 'choice');  // only choice shows options
+  $$('#sessionSeg button').forEach((b) => b.classList.toggle('active', b.dataset.session === settings.session));
+  $('#cramHint').classList.toggle('hidden', settings.session !== 'cram');
 
   // count slider: top of the range = whole deck ("all"), below = a subset
   const total = currentParsed.cards.length;
@@ -164,7 +166,8 @@ function syncSegs() {
 
 function updateStartLabel(total, subset) {
   const n = subset ? parseInt(settings.count, 10) : total;
-  $('#startStudy').textContent = subset ? `Study ${n} cards` : `Study all ${total} cards`;
+  const verb = settings.session === 'cram' ? 'Cram' : 'Study';
+  $('#startStudy').textContent = subset ? `${verb} ${n} cards` : `${verb} all ${total} cards`;
 }
 
 async function exportDeck(includeProgress) {
