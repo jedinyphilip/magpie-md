@@ -162,8 +162,10 @@ function syncSegs() {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
   $$('#orderSeg button').forEach((b) => b.classList.toggle('active', b.dataset.order === settings.order));
+  // nothing to hint in this deck: show Hide (what actually happens), keep the setting
+  const hints = currentSupport.hints ? settings.hints : 'hide';
   $$('#hintsSeg button').forEach((b) => {
-    b.classList.toggle('active', b.dataset.hints === settings.hints);
+    b.classList.toggle('active', b.dataset.hints === hints);
     b.disabled = !currentSupport.hints;
     b.title = currentSupport.hints ? '' : UNSUPPORTED.hints;
   });
