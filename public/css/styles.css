@@ -153,6 +153,12 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .seg button.active { background: var(--accent); color: #fff; }
 .seg button:disabled { opacity: .35; cursor: not-allowed; }
 .subset-hint { margin: 8px 0 0; }
+.update-bar {
+  position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 20;
+  display: flex; align-items: center; gap: 12px; max-width: calc(100% - 32px);
+  padding: 10px 12px 10px 16px; border-radius: 12px; font-size: 14px;
+  background: var(--panel-2); border: 1px solid var(--border); box-shadow: 0 6px 24px rgba(0, 0, 0, .25);
+}
 .summary-missed { margin: 12px auto 0; max-width: 60ch; }
 
 .cfg-cards { margin-top: 14px; }

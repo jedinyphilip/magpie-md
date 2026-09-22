@@ -205,6 +205,20 @@ On GitHub Pages: push this folder to a repo, then under
 **Settings > Pages > Build from branch** pick your branch and `/ (root)`. The site
 shows up at `https://<user>.github.io/<repo>/`.
 
+### Releasing an update
+
+Bump the `?v=` number on the stylesheet and every script tag in `index.html`
+(all to the same new value):
+
+```bash
+sed -i -E 's/\?v=[0-9]+"/?v=9"/' index.html   # 9 = next version
+```
+
+GitHub Pages lets browsers reuse `index.html` for up to 10 minutes, so a visitor can
+briefly get the old page. The app checks the live `index.html` on load (and when the
+tab comes back into view) and switches to the new version by itself, or offers a
+*Reload* button while a study session or an edit is in progress.
+
 ## Files
 
 | File | Purpose |

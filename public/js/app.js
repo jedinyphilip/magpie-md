@@ -4,6 +4,38 @@
 const ICON_EXPAND = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
 const ICON_COMPRESS = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v3a2 2 0 0 1-2 2H4M15 3v3a2 2 0 0 0 2 2h3M9 21v-3a2 2 0 0 0-2-2H4M15 21v-3a2 2 0 0 1 2-2h3"/></svg>';
 
+// GitHub Pages lets browsers reuse index.html for 10 minutes (max-age=600), so
+// right after a deploy a visit can still get the old page, whose ?v= URLs load
+// the old code. Fetch the live index.html uncached and, if it loads a newer
+// app.js, switch to it: straight away when nothing is in progress, otherwise
+// through the reload bar so a study session or an edit isn't thrown away.
+const APP_VERSION = new URL(document.currentScript.src).searchParams.get('v');
+let lastUpdateCheck = 0;
+
+async function checkForUpdate() {
+  if (!APP_VERSION || location.protocol === 'file:') return;
+  lastUpdateCheck = Date.now();
+  let live;
+  try {
+    const res = await fetch(location.pathname + '?update=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    live = ((await res.text()).match(/app\.js\?v=([\w.-]+)/) || [])[1];
+  } catch (e) { return; }
+  if (!live || live === APP_VERSION) return;
+  const idle = ['homeView', 'deckView', 'summaryView'].some((v) => !$('#' + v).classList.contains('hidden'))
+    && !$('#importBtn').disabled && !$('#exportApkg').disabled;
+  let tried = false;             // only jump once per version, in case a cache still hands back the old page
+  try { tried = sessionStorage.getItem('magpie.updateTo') === live; } catch (e) { /* storage blocked */ }
+  if (idle && !tried) loadVersion(live);
+  else $('#updateBar').classList.remove('hidden');
+}
+
+// a new URL can't come out of the browser cache, so this always gets the live page
+function loadVersion(v) {
+  try { sessionStorage.setItem('magpie.updateTo', v); } catch (e) { /* storage blocked */ }
+  location.replace(location.pathname + '?v=' + encodeURIComponent(v) + location.hash);
+}
+
 const isFullscreen = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
 
 function setupFullscreen() {
@@ -27,6 +59,14 @@ function setupFullscreen() {
 }
 
 async function init() {
+  // drop the ?v= that loadVersion added, and look for a newer deploy
+  if (new URLSearchParams(location.search).has('v')) history.replaceState(null, '', location.pathname + location.hash);
+  checkForUpdate();
+  $('#updateReload').addEventListener('click', () => loadVersion(Date.now().toString(36)));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Date.now() - lastUpdateCheck > 5 * 60 * 1000) checkForUpdate();
+  });
+
   applyTheme();
   $('#storageNote').textContent = 'Progress is saved per deck and survives reloads.';
 
