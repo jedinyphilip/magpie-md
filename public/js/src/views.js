@@ -1,7 +1,7 @@
 'use strict';
 // views: home, deck detail, edit, import/export
 
-const views = ['homeView', 'pasteView', 'editView', 'deckView', 'studyView', 'summaryView'];
+const views = ['homeView', 'pasteView', 'editView', 'deckView', 'studyView', 'summaryView', 'printView'];
 function show(view) {
   for (const v of views) $('#' + v).classList.toggle('hidden', v !== view);
   document.body.classList.toggle('studying', view === 'studyView');  // body.studying locks the viewport

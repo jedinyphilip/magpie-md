@@ -323,3 +323,48 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
   .study-top { gap: 10px; }
   .counter { font-size: 13px; }
 }
+
+/* ---- print view: real-size pages, previewed scaled to the screen ---- */
+.print-config { display: flex; flex-wrap: wrap; gap: 14px 18px; margin: 8px 0 4px; }
+.print-deck { color: var(--muted); font-weight: 400; }
+.print-pages { display: flex; flex-direction: column; align-items: center; gap: 18px; margin-top: 18px; }
+.ppage-wrap { position: relative; overflow: hidden; flex-shrink: 0; }
+/* contain: a sideways card is laid out unturned first, and without containment
+   that box made Chrome shrink the whole printout to fit it */
+.ppage { position: relative; overflow: hidden; contain: strict; background: #fff; color: #111; transform-origin: 0 0; box-shadow: 0 4px 18px rgba(0, 0, 0, .35); }
+.ppiece { position: absolute; }
+.pcard { position: absolute; left: 0; top: 0; transform-origin: 0 0; box-sizing: border-box; border: .25mm solid #9aa0aa; }
+.pface { position: absolute; top: 0; box-sizing: border-box; padding: 4mm; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.pnum { position: absolute; top: 1.2mm; right: 1.6mm; font: 400 5.5pt/1 system-ui, sans-serif; color: #9aa0aa; }
+.pfold { position: absolute; top: 0; bottom: 0; left: 50%; border-left: .25mm dashed #9aa0aa; }
+.pfoot { position: absolute; left: 8mm; right: 8mm; bottom: 3mm; font: 400 6pt/1 system-ui, sans-serif; color: #9aa0aa; text-align: center; }
+/* card content: shared by the measuring pass and the pages, so sizes match */
+.pbody { font-size: 9.5pt; line-height: 1.3; text-align: center; color: #111; overflow-wrap: break-word; word-break: break-word; }
+.pbody.front { font-weight: 600; }
+.pbody p { margin: .3em 0; }
+.pbody h1, .pbody h2, .pbody h3 { margin: .3em 0; font-size: 1.15em; }
+.pbody ul, .pbody ol { display: inline-block; margin: .3em 0; padding-left: 1.2em; text-align: left; }
+.pbody pre { margin: .4em 0; padding: 2mm; border-radius: 1.5mm; background: #f1f3f6; text-align: left; white-space: pre-wrap; font-size: .9em; }
+.pbody img, .pbody svg { display: block; max-width: 100%; height: auto; margin: 1.5mm auto; }
+.pbody img { max-height: 120mm; }
+.pbody table { border-collapse: collapse; margin: .3em auto; }
+.pbody td, .pbody th { border: .2mm solid #bbb; padding: .5mm 1.5mm; }
+.pbody blockquote { margin: .3em 0; padding-left: 2mm; border-left: .6mm solid #9aa0aa; text-align: left; }
+.pbody .cloze { color: #2250c8; font-weight: 700; }
+.pbody .katex-display { margin: .4em 0; }
+.pbody a { color: inherit; }
+#printMeasure { position: absolute; left: -10000px; top: 0; visibility: hidden; }
+#printMeasure .pbody { display: block; }
+
+@media print {
+  html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
+  body > header, body > footer, .update-bar, #printView .print-toolbar, #printMeasure { display: none !important; }
+  main > .view:not(#printView) { display: none !important; }
+  main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .view { animation: none !important; }
+  .print-pages { display: block; margin: 0; }
+  .ppage-wrap { width: auto !important; height: auto !important; overflow: visible; }
+  .ppage { transform: none !important; box-shadow: none; break-after: page; }
+  .ppage-wrap:last-child .ppage { break-after: auto; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

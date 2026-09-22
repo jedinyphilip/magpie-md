@@ -31,6 +31,9 @@ smaller batch.
 
 ## What's new
 
+- **Printable cards.** *Print / PDF* on a deck lays its cards out on A4 or Letter
+  pages, each card sized to its content and packed (turned sideways where that fits
+  better) to use as little paper as possible. Print it, or save it as a PDF.
 - **Cram mode.** Set *Session* to *Cram* and missed cards keep coming back a few
   cards later until you've got every one right.
 - **Anki `.apkg` import and export.** Import packages from any Anki version (including
@@ -165,6 +168,26 @@ What is the capital of France?
 It renders invisibly on GitHub and is read back when you import the file, which
 restores your stats. Cards are matched by the text of their front, so editing a
 back keeps the progress while editing a front starts that card fresh.
+
+## Printing cards
+
+*Print / PDF* on a deck opens a preview of the printed pages. Pick the paper (A4 or
+Letter) and a layout, then print, or choose *Save as PDF* in the print dialog. Keep the
+scale at 100%.
+
+- **Fold-over** (default): each card is printed front and back side by side. Cut it
+  out along its outline and fold it on the dashed line. Works on any printer.
+- **Double-sided**: fronts on one page, backs on the next. Print double-sided,
+  flipping on the long edge, and each back lands on its front. Backs are mirrored,
+  and a card turned sideways on the front is turned the other way on the back. A small
+  gap between cards absorbs a printer that doesn't line both sides up exactly.
+
+Every card gets the smallest size that fits its front and back: a short question gets
+a small card, a card with a big image or a long answer a larger one. Card widths are
+fractions of the printable width, so cards fill whole rows. The cards are then packed
+onto the pages largest first, each placed where it leaves the least unused space and
+turned sideways when that fits better. Each card carries its number in the corner, on
+both sides.
 
 ## Study options
 

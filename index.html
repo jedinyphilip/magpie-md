@@ -6,7 +6,8 @@
 <title>magpie.md</title>
 <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" crossorigin="anonymous" />
-<link rel="stylesheet" href="public/css/styles.css?v=14" />
+<link rel="stylesheet" href="public/css/styles.css?v=15" />
+<style id="printPageStyle"></style>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -207,6 +208,7 @@ The capital of France.
         <button class="btn ghost" id="exportPlain">Export .md</button>
         <button class="btn ghost" id="exportProgress">Export .md + progress</button>
         <button class="btn ghost" id="exportApkg">Export .apkg</button>
+        <button class="btn ghost" id="printDeck">Print / PDF</button>
       </div>
     </div>
     <div class="panel">
@@ -307,6 +309,39 @@ The capital of France.
     </div>
   </section>
 
+  <!-- print: pages laid out at paper size, previewed scaled down -->
+  <section id="printView" class="view hidden">
+    <div class="panel print-toolbar">
+      <div class="panel-head"><h2>Print cards <span class="print-deck">· <span id="printTitle"></span></span></h2></div>
+      <div class="print-config">
+        <div class="cfg">
+          <label>Paper</label>
+          <div class="seg" id="printPaperSeg">
+            <button data-paper="a4">A4</button>
+            <button data-paper="letter">Letter</button>
+          </div>
+        </div>
+        <div class="cfg">
+          <label>Layout</label>
+          <div class="seg" id="printLayoutSeg">
+            <button data-layout="fold">Fold-over</button>
+            <button data-layout="duplex">Double-sided</button>
+          </div>
+        </div>
+      </div>
+      <p class="hint" id="printHint"></p>
+      <p class="hint" id="printInfo"></p>
+      <p class="hint">In the print dialog, choose <em>Save as PDF</em> to get a file, and keep the
+      scale at 100% (actual size).</p>
+      <div class="row end">
+        <button class="btn ghost" id="printBack">Back to deck</button>
+        <button class="btn" id="printGo">Print / Save as PDF</button>
+      </div>
+    </div>
+    <div id="printPages" class="print-pages"></div>
+    <div id="printMeasure" aria-hidden="true"></div>
+  </section>
+
   <!-- summary -->
   <section id="summaryView" class="view hidden">
     <div class="panel center">
@@ -335,16 +370,17 @@ The capital of France.
 <!-- scripts in load order - no modules, so file:// works. public/vendor/ (sql.js, zstd)
      is loaded on demand by apkg.js. On every release bump ?v= on all of these and the
      stylesheet together: the app reloads itself when the live app.js ?v= changes. -->
-<script src="public/js/src/util.js?v=14"></script>
-<script src="public/js/src/config.js?v=14"></script>
-<script src="public/js/src/store.js?v=14"></script>
-<script src="public/js/src/media.js?v=14"></script>
-<script src="public/js/src/markdown.js?v=14"></script>
-<script src="public/js/src/deck.js?v=14"></script>
-<script src="public/js/src/apkg.js?v=14"></script>
-<script src="public/js/src/samples.js?v=14"></script>
-<script src="public/js/src/study.js?v=14"></script>
-<script src="public/js/src/views.js?v=14"></script>
-<script src="public/js/app.js?v=14"></script>
+<script src="public/js/src/util.js?v=15"></script>
+<script src="public/js/src/config.js?v=15"></script>
+<script src="public/js/src/store.js?v=15"></script>
+<script src="public/js/src/media.js?v=15"></script>
+<script src="public/js/src/markdown.js?v=15"></script>
+<script src="public/js/src/deck.js?v=15"></script>
+<script src="public/js/src/apkg.js?v=15"></script>
+<script src="public/js/src/print.js?v=15"></script>
+<script src="public/js/src/samples.js?v=15"></script>
+<script src="public/js/src/study.js?v=15"></script>
+<script src="public/js/src/views.js?v=15"></script>
+<script src="public/js/app.js?v=15"></script>
 </body>
 </html>

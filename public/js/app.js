@@ -127,6 +127,19 @@ async function init() {
   $('#exportProgress').addEventListener('click', () => exportDeck(true));
   $('#exportApkg').addEventListener('click', exportDeckApkg);
 
+  // print
+  const relayout = () => buildPrintView().catch((e) => { $('#printInfo').textContent = 'Could not lay out the cards: ' + e.message; });
+  $('#printDeck').addEventListener('click', openPrintView);
+  $('#printBack').addEventListener('click', () => openDeck(currentDeckId));
+  $('#printGo').addEventListener('click', () => window.print());
+  $$('#printPaperSeg button').forEach((b) => b.addEventListener('click', () => {
+    settings.printPaper = b.dataset.paper; saveSettings(); relayout();
+  }));
+  $$('#printLayoutSeg button').forEach((b) => b.addEventListener('click', () => {
+    settings.printLayout = b.dataset.layout; saveSettings(); relayout();
+  }));
+  window.addEventListener('resize', () => { if (!$('#printView').classList.contains('hidden')) scalePrintPreview(); });
+
   $$('#modeSeg button').forEach((b) => b.addEventListener('click', () => {
     settings.mode = b.dataset.mode; saveSettings(); syncSegs();
   }));
