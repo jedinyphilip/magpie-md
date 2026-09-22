@@ -138,11 +138,17 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .stat .lbl { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
 .big-stats .num { font-size: 30px; }
 
-.study-config { display: flex; gap: 18px; margin: 8px 0 6px; }
-.study-config .cfg { flex: 1; min-width: 0; }            /* groups split the row evenly: 50/50 for two */
-.study-config #hintsCfg,
-.study-config #shuffleCfg,
-.study-config #sessionCfg { flex: 0 1 auto; }            /* two-option toggles - size to content so Mode/Order get the room */
+.study-config { margin: 8px 0 6px; }
+/* Two columns, so no label gets squeezed in any mode: Mode and Order take the
+   room on the left, the two-option toggles (Hints or Answers, and Session) sit
+   beside them. Phones use their own grid (see the media query below). */
+@media (min-width: 601px) {
+  .study-config { display: grid; grid-template-columns: 1fr auto; gap: 14px 18px; grid-template-areas: "mode toggle" "order session"; }
+  #modeCfg { grid-area: mode; }
+  #hintsCfg, #shuffleCfg { grid-area: toggle; }
+  #orderCfg { grid-area: order; }
+  #sessionCfg { grid-area: session; }
+}
 .study-config .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; width: 100%; }
 /* min-height keeps one- and two-line buttons the same height without relying on
    the browser stretching the button (Firefox doesn't always). */
