@@ -79,18 +79,28 @@ function serializeDeck(deck, progress, includeProgress) {
   return out + '\n';
 }
 
-function getDecks() { return decksCache; }
-function setDecks(d) { decksCache = d; persistDecks(d); }
-
-function addDeckFromText(text) {
+// media: name -> Blob for images the text already points at (pasted, .apkg)
+function addDeckFromText(text, media) {
   // Anki TSV gets turned into markdown here, so what we store is still markdown
   if (looksLikeAnki(text)) text = ankiToMarkdown(text);
+  const id = storeDeck(text, media);
+  if (!id) alert('No cards found. Check the format (use --- and ===).');
+  return id;
+}
+
+// Store a markdown deck under an id derived from its title (so re-importing
+// replaces it) and merge any progress embedded in it. Returns null if no cards.
+function storeDeck(text, media) {
+  if (mediaEnabled()) {
+    // inline base64 images move out of the text into the media store
+    const ex = extractInlineImages(text);
+    text = ex.text;
+    if (ex.media.size) media = new Map([...(media || []), ...ex.media]);
+  }
   const parsed = parseDeck(text);
-  if (parsed.cards.length === 0) { alert('No cards found. Check the format (use --- and ===).'); return null; }
+  if (parsed.cards.length === 0) return null;
   const id = slug(parsed.title) + '-' + hash(parsed.title);
-  const decks = getDecks();
-  decks[id] = { title: parsed.title, source: text, addedAt: Date.now() };
-  setDecks(decks);
+  saveDeck(id, { title: parsed.title, source: text, addedAt: Date.now() }, media);
 
   // merge embedded progress, keeping the newer record per card (by ts, then
   // review count) so an old import can't clobber fresher local progress.
@@ -209,8 +219,8 @@ function parseCloze(card) {
 }
 
 // Convert an Anki "Notes in Plain Text" (TSV/CSV) export into markdown so it
-// runs through parseDeck. Markdown stays the source of truth; .apkg (zip +
-// sqlite) isn't handled.
+// runs through parseDeck. Markdown stays the source of truth; .apkg files go
+// through apkg.js instead.
 function looksLikeAnki(text) {
   // these headers have a colon, so a markdown "# Deck title" won't match
   if (/^#(?:separator|html|columns|notetype|deck|tags|guid)\b.*:/im.test(text)) return true;
@@ -224,20 +234,35 @@ function sepChar(val) {
   return map[val.toLowerCase()] || (val.length === 1 ? val : '\t');
 }
 
+// &amp; goes last so "&amp;lt;" stays the text "&lt;"
+function decodeEntities(s) {
+  const cp = (n, raw) => (n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : raw);
+  return s
+    .replace(/&nbsp;/gi, ' ').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"').replace(/&apos;/gi, "'")
+    .replace(/&#x([0-9a-f]+);/gi, (m, h) => cp(parseInt(h, 16), m))
+    .replace(/&#(\d+);/g, (m, d) => cp(Number(d), m))
+    .replace(/&amp;/gi, '&');
+}
+
 function htmlToMd(s) {
-  return (s || '')
+  const md = (s || '')
+    .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(?:div|p)>/gi, '\n')
-    .replace(/<(?:div|p)[^>]*>/gi, '')
-    .replace(/<(b|strong)[^>]*>([\s\S]*?)<\/\1>/gi, '**$2**')
-    .replace(/<(i|em)[^>]*>([\s\S]*?)<\/\1>/gi, '*$2*')
-    .replace(/<img[^>]*\bsrc\s*=\s*"([^"]*)"[^>]*>/gi, '![]($1)')
+    .replace(/<\/?(?:div|p|ul|ol|li|h[1-6])(?:\s[^>]*)?>/gi, (t) => (/^<li/i.test(t) ? '\n- ' : '\n'))
+    .replace(/<hr(?:\s[^>]*)?>/gi, '\n***\n')
+    // (?:\s[^>]*)? so <b> doesn't also match <br>/<blockquote>, nor <i> match <img>
+    .replace(/<(b|strong)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi, '**$2**')
+    .replace(/<(i|em)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi, '*$2*')
+    .replace(/<img\b[^>]*?\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>/gi,
+      (_, a, b, c) => `![](${decodeEntities(a ?? b ?? c).replace(/ /g, '%20')})`)
     .replace(/\[sound:[^\]]*\]/gi, '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&').replace(/&lt;/gi, '<').replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"').replace(/&#0*39;/gi, "'")
-    .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n')
+    .replace(/\[\$\$\]([\s\S]*?)\[\/\$\$\]/g, '$$$$$1$$$$')     // Anki [$$]..[/$$] -> $$..$$
+    .replace(/\[\$\]([\s\S]*?)\[\/\$\]/g, '$$$1$$')             // Anki [$]..[/$] -> $..$
+    .replace(/<[^>]+>/g, '');
+  return decodeEntities(md)
+    .replace(/^[ \t]*(?:---|===)[ \t]*$/gm, '***')   // a lone ---/=== would split the card
+    .replace(/[ \t]+\n/g, '\n').replace(/\n{2,}/g, '\n')
     .trim();
 }
 

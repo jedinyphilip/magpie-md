@@ -9,11 +9,15 @@ function renderMath(tex, display) {
   return `<code>${escapeHtml(d + tex + d)}</code>`;
 }
 
-function md2html(src) {
+// opts.math(tex, display) and opts.img(alt, url) override how math and images
+// come out (the .apkg export wants MathJax delimiters and plain filenames).
+function md2html(src, opts = {}) {
   if (!src) return '';
   const codeBlocks = [];
   const math = [];
   const keep = (html) => '@@M' + (math.push(html) - 1) + '@@';
+  const mathHtml = opts.math || renderMath;
+  const imgHtml = opts.img || cardImg;
   // fenced code
   src = src.replace(/```([\s\S]*?)```/g, (_, code) => {
     codeBlocks.push(code.replace(/^\n/, ''));
@@ -27,16 +31,16 @@ function md2html(src) {
     '@@SVG' + (svgs.push(sanitizeSvg(m)) - 1) + '@@');
 
   // math: $$ \[ display, $ \( inline. stashed so markdown leaves it alone.
-  src = src.replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => keep(renderMath(tex, true)));
-  src = src.replace(/\\\[([\s\S]+?)\\\]/g, (_, tex) => keep(renderMath(tex, true)));
-  src = src.replace(/\$(?!\s)((?:[^$\n\\]|\\.)+?)(?<!\s)\$/g, (_, tex) => keep(renderMath(tex, false)));
-  src = src.replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) => keep(renderMath(tex, false)));
+  src = src.replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => keep(mathHtml(tex, true)));
+  src = src.replace(/\\\[([\s\S]+?)\\\]/g, (_, tex) => keep(mathHtml(tex, true)));
+  src = src.replace(/\$(?!\s)((?:[^$\n\\]|\\.)+?)(?<!\s)\$/g, (_, tex) => keep(mathHtml(tex, false)));
+  src = src.replace(/\\\(([\s\S]+?)\\\)/g, (_, tex) => keep(mathHtml(tex, false)));
 
   // stash images too - keeps a base64 data: src out of the emphasis/link passes
   // (a _ or / in the payload would otherwise get mangled).
   const imgs = [];
   src = src.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, url) =>
-    '@@IMG' + (imgs.push(`<img class="md-img" loading="lazy" alt="${escapeHtml(alt)}" src="${escapeHtml(url)}"/>`) - 1) + '@@');
+    '@@IMG' + (imgs.push(imgHtml(alt, url)) - 1) + '@@');
 
   const lines = src.split('\n');
   let html = '';
@@ -67,6 +71,13 @@ function md2html(src) {
   html = html.replace(/@@IMG(\d+)@@/g, (_, i) => imgs[Number(i)]);
   html = html.replace(/@@SVG(\d+)@@/g, (_, i) => svgs[Number(i)]);
   return html;
+}
+
+// media:<name> points at an image stored with the deck (see media.js)
+function cardImg(alt, url) {
+  const name = refName(url);
+  const src = name == null ? url : mediaUrl(name);
+  return `<img class="md-img" loading="lazy" alt="${escapeHtml(alt)}" src="${escapeHtml(src)}"/>`;
 }
 
 // strip script / on*= handlers / javascript: links from svg. not bulletproof,

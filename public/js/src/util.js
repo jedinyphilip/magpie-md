@@ -23,75 +23,58 @@ function loadJSON(key, fallback) {
 }
 function saveJSON(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
 
-// Decks can hold base64 images that bust localStorage's ~5MB, so they live in
-// IndexedDB behind an in-memory cache (keeps getDecks/setDecks synchronous).
-// Falls back to localStorage when IndexedDB is missing (some file:// setups).
-const IDB_NAME = 'magpie';
-const IDB_STORE = 'kv';
-const IDB_DECKS_KEY = 'decks';
-let idbDB = null;
-let decksCache = {};
-
-function idbOpen() {
-  return new Promise((resolve) => {
-    if (typeof indexedDB === 'undefined' || !indexedDB) return resolve(null);
-    let req;
-    try { req = indexedDB.open(IDB_NAME, 1); }
-    catch (e) { return resolve(null); }
-    req.onupgradeneeded = () => {
-      if (!req.result.objectStoreNames.contains(IDB_STORE)) req.result.createObjectStore(IDB_STORE);
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => resolve(null);
-    req.onblocked = () => resolve(null);
-  });
+// bytes <-> base64, sha1. media is stored as Blobs but travels as base64 data:
+// URIs inside exported .md files, and sha1 names pasted/embedded images.
+function bytesToBase64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
 }
-function idbGet(db, key) {
-  return new Promise((resolve, reject) => {
-    const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-function idbSet(db, key, val) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put(val, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
+function base64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
-// Populate the cache before first render; migrate old localStorage decks once.
-async function initDeckStore() {
-  idbDB = await idbOpen();
-  if (idbDB) {
-    let stored = null;
-    try { stored = await idbGet(idbDB, IDB_DECKS_KEY); } catch (e) { stored = null; }
-    if (!stored || Object.keys(stored).length === 0) {
-      const legacy = loadJSON(LS_DECKS, {});
-      if (Object.keys(legacy).length) {
-        stored = legacy;
-        try { await idbSet(idbDB, IDB_DECKS_KEY, legacy); localStorage.removeItem(LS_DECKS); }
-        catch (e) { /* keep the localStorage copy if the move fails */ }
-      }
+function sha1Hex(bytes) {
+  if (typeof bytes === 'string') bytes = new TextEncoder().encode(bytes);
+  const n = bytes.length;
+  const words = new Uint32Array((((n + 8) >> 6) + 1) * 16);
+  for (let i = 0; i < n; i++) words[i >> 2] |= bytes[i] << (24 - (i & 3) * 8);
+  words[n >> 2] |= 0x80 << (24 - (n & 3) * 8);
+  words[words.length - 2] = Math.floor(n / 0x20000000);
+  words[words.length - 1] = (n * 8) >>> 0;
+  const h = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+  const w = new Uint32Array(80);
+  for (let off = 0; off < words.length; off += 16) {
+    for (let t = 0; t < 16; t++) w[t] = words[off + t];
+    for (let t = 16; t < 80; t++) { const x = w[t - 3] ^ w[t - 8] ^ w[t - 14] ^ w[t - 16]; w[t] = (x << 1) | (x >>> 31); }
+    let [a, b, c, d, e] = h;
+    for (let t = 0; t < 80; t++) {
+      const f = t < 20 ? (b & c) | (~b & d) : t < 40 || t >= 60 ? b ^ c ^ d : (b & c) | (b & d) | (c & d);
+      const k = t < 20 ? 0x5a827999 : t < 40 ? 0x6ed9eba1 : t < 60 ? 0x8f1bbcdc : 0xca62c1d6;
+      const tmp = (((a << 5) | (a >>> 27)) + f + e + k + w[t]) | 0;
+      e = d; d = c; c = (b << 30) | (b >>> 2); b = a; a = tmp;
     }
-    decksCache = stored || {};
-  } else {
-    decksCache = loadJSON(LS_DECKS, {});
+    h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0; h[4] = (h[4] + e) | 0;
   }
+  return h.map((x) => (x >>> 0).toString(16).padStart(8, '0')).join('');
 }
 
-function persistDecks(d) {
-  if (idbDB) {
-    idbSet(idbDB, IDB_DECKS_KEY, d).catch(() =>
-      alert('Could not save to storage. It may be full - large embedded images use a lot of space.'));
-  } else {
-    try { saveJSON(LS_DECKS, d); }
-    catch (e) {
-      alert('Could not save this deck. Browser storage here is limited to about 5 MB; large embedded images may have exceeded it.');
-    }
-  }
+function downloadBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+// disable a button and relabel it while fn runs
+async function withBusy(btn, label, fn) {
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = label;
+  try { return await fn(); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}

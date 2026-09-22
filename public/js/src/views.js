@@ -45,12 +45,13 @@ function deckItem(id, title, s) {
   return li;
 }
 
-function deckMarkdown(id, includeProgress) {
+// the deck as a self-contained .md: stored images go back in as base64
+async function deckMarkdown(id, includeProgress) {
   const decks = getDecks();
   if (!decks[id]) return '';
   const parsed = parseDeck(decks[id].source);
   const prog = loadJSON(LS_PROGRESS(id), {});
-  return serializeDeck(parsed, prog, includeProgress);
+  return inlineMedia(serializeDeck(parsed, prog, includeProgress), id);
 }
 
 function copyDeckToClipboard(id, btn) {
@@ -60,10 +61,17 @@ function copyDeckToClipboard(id, btn) {
     btn.textContent = ok ? 'Copied' : 'Failed';
     setTimeout(() => { btn.textContent = label; }, 1200);
   };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => done(true), () => done(fallbackCopy(text)));
+  const lastTry = () => text.then((t) => done(fallbackCopy(t)));
+  // Building the text can wait on storage. A ClipboardItem takes the pending
+  // text, so Safari still counts the copy as part of the click.
+  if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+    const item = new ClipboardItem({ 'text/plain': text.then((t) => new Blob([t], { type: 'text/plain' })) });
+    navigator.clipboard.write([item]).then(() => done(true), () =>
+      text.then((t) => navigator.clipboard.writeText(t)).then(() => done(true), lastTry));
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    text.then((t) => navigator.clipboard.writeText(t)).then(() => done(true), lastTry);
   } else {
-    done(fallbackCopy(text));
+    lastTry();
   }
 }
 
@@ -82,10 +90,7 @@ function fallbackCopy(text) {
 
 function deleteDeckFromHome(id, title) {
   if (!confirm('Delete "' + title + '" and its progress from this browser?')) return;
-  const decks = getDecks();
-  delete decks[id];
-  setDecks(decks);
-  localStorage.removeItem(LS_PROGRESS(id));
+  removeDeck(id);
   renderHome();
 }
 
@@ -122,6 +127,7 @@ function openDeck(id) {
   if (!decks[id]) return renderHome();
   currentDeckId = id;
   currentParsed = parseDeck(decks[id].source);
+  useDeckMedia(id);          // start loading its images; startStudy waits for them
 
   $('#deckTitle').textContent = currentParsed.title;
   renderDeckStats();
@@ -161,27 +167,28 @@ function updateStartLabel(total, subset) {
   $('#startStudy').textContent = subset ? `Study ${n} cards` : `Study all ${total} cards`;
 }
 
-function exportDeck(includeProgress) {
-  const prog = loadJSON(LS_PROGRESS(currentDeckId), {});
-  const text = serializeDeck(currentParsed, prog, includeProgress);
-  const blob = new Blob([text], { type: 'text/markdown' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = slug(currentParsed.title) + (includeProgress ? '.progress.md' : '.md');
-  a.click();
-  URL.revokeObjectURL(a.href);
+async function exportDeck(includeProgress) {
+  const text = await deckMarkdown(currentDeckId, includeProgress);
+  downloadBlob(new Blob([text], { type: 'text/markdown' }),
+    slug(currentParsed.title) + (includeProgress ? '.progress.md' : '.md'));
+}
+
+function exportDeckApkg() {
+  withBusy($('#exportApkg'), 'Exporting...', () => exportApkg(currentDeckId))
+    .catch((e) => alert('Could not export this deck as .apkg: ' + e.message));
 }
 
 // edits the markdown in place under the same deck id, so progress survives
 // (changing a front rekeys that card, changing a back keeps it - like re-import)
 let editorCollapsed = true;       // base64 / svg truncated by default
 let editorBlobs = [];             // index -> full content behind each ⟪..#i⟫ token
+let pendingMedia = new Map();     // images pasted into the editor/paste box, saved with the deck
 
 // swap long base64 + whole <svg> for short ⟪..#i⟫ tokens so the textarea is readable
 function collapseEditor(text) {
   editorBlobs = [];
   let out = text.replace(/<svg\b[\s\S]*?<\/svg>/gi, (m) => `⟪svg#${editorBlobs.push(m) - 1}⟫`);
-  out = out.replace(/(data:[\w/.+-]*;base64,)([A-Za-z0-9+/=]{32,})/g,
+  out = out.replace(/(data:[\w/.+-]*(?:;[\w.+-]+=[^;,)\s]*)*;base64,)([A-Za-z0-9+/=]{32,})/g,
     (_, prefix, payload) => prefix + `⟪img#${editorBlobs.push(payload) - 1}⟫`);
   return out;
 }
@@ -211,6 +218,7 @@ function openEditor() {
   const decks = getDecks();
   if (!decks[currentDeckId]) return renderHome();
   editorCollapsed = true;
+  pendingMedia = new Map();
   $('#editArea').value = collapseEditor(decks[currentDeckId].source);
   syncEditToggle();
   show('editView');
@@ -218,18 +226,26 @@ function openEditor() {
 }
 
 function saveDeckEdit() {
-  const text = editorCollapsed ? expandEditor($('#editArea').value) : $('#editArea').value;
+  let text = editorCollapsed ? expandEditor($('#editArea').value) : $('#editArea').value;
+  let media = pendingMedia;
+  if (mediaEnabled()) {
+    // base64 typed or pasted in as text moves to the media store too
+    const ex = extractInlineImages(text);
+    text = ex.text;
+    media = new Map([...pendingMedia, ...ex.media]);
+  }
   const parsed = parseDeck(text);
   if (parsed.cards.length === 0) { alert('No cards found. Check the format (use --- and ===).'); return; }
   const decks = getDecks();
-  decks[currentDeckId] = Object.assign({}, decks[currentDeckId], { title: parsed.title, source: text });
-  setDecks(decks);
+  saveDeck(currentDeckId, Object.assign({}, decks[currentDeckId], { title: parsed.title, source: text }), media);
+  pendingMedia = new Map();
   currentParsed = parsed;
   openDeck(currentDeckId);
 }
 
-// paste an image -> drop a base64 markdown image at the cursor (a token in the
-// collapsed editor, the full data URI otherwise)
+// paste an image -> a markdown image at the cursor. It's kept aside and stored
+// with the deck on save (media:<name>), or embedded as base64 when there's no
+// IndexedDB (a token in the collapsed editor, the full data URI otherwise).
 function handleImagePaste(e) {
   const items = (e.clipboardData && e.clipboardData.items) || [];
   for (const it of items) {
@@ -237,6 +253,15 @@ function handleImagePaste(e) {
       const file = it.getAsFile();
       if (!file) continue;
       e.preventDefault();
+      if (mediaEnabled()) {
+        const ta = e.target;
+        file.arrayBuffer().then((buf) => {
+          const name = `paste-${sha1Hex(new Uint8Array(buf)).slice(0, 12)}.${EXT_BY_MIME[file.type] || 'png'}`;
+          pendingMedia.set(name, file);
+          insertAtCursor(ta, `![pasted image](${mediaRef(name)})`);
+        });
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         const url = reader.result;
@@ -263,18 +288,22 @@ function insertAtCursor(ta, text) {
   ta.focus();
 }
 
-function importFiles(fileList) {
-  let lastId = null, n = 0;
-  const files = [...fileList];
-  let pending = files.length;
-  files.forEach((file) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const id = addDeckFromText(reader.result);
-      if (id) { lastId = id; n++; }
-      if (--pending === 0) { renderHome(); if (n === 1 && lastId) openDeck(lastId); }
-    };
-    reader.readAsText(file);
+// .md/.txt/.tsv go through addDeckFromText; .apkg/.colpkg through apkg.js
+async function importFiles(fileList) {
+  const ids = [];
+  await withBusy($('#importBtn'), 'Importing...', async () => {
+    for (const file of [...fileList]) {
+      if (/\.(apkg|colpkg)$/i.test(file.name)) {
+        try { ids.push(...await importApkg(file)); }
+        catch (e) { alert(`Could not import ${file.name}: ${e.message}.`); }
+      } else {
+        const id = addDeckFromText(await file.text());
+        if (id) ids.push(id);
+      }
+    }
   });
+  if (ids.length) requestPersistence();
+  renderHome();
+  if (ids.length === 1) openDeck(ids[0]);
 }
 

@@ -1,7 +1,8 @@
 # <img src="public/favicon.svg" width="22" height="22" alt="magpie.md logo" style="vertical-align: middle;"> magpie.md
 
 A small static flashcard app that runs on [GitHub Pages](https://jedinyphilip.github.io/magpie-md/). No backend, no build step,
-no dependencies (the math rendering loads KaTeX from a CDN).
+no npm dependencies (the math rendering loads KaTeX from a CDN, and Anki `.apkg` support
+uses two vendored libraries that load only when you import or export one).
 
 The whole reason it exists: the default is the full deck, not some random
 subset. Every session covers every card, unless you deliberately pick a
@@ -17,18 +18,26 @@ smaller batch.
 - **Forgiving typed answers.** Type-to-answer grading scores by similarity, so
   case, punctuation, accents and small typos don't count against you.
 - **LaTeX math** via KaTeX: inline `$...$` and display `$$...$$`.
-- **Images** by URL, relative path, or embedded as base64 inside the `.md`, plus raw inline `<svg>` drawings.
-- **Import from Anki** by exporting *Notes in Plain Text*. It's converted to markdown on the way in.
+- **Images** by URL, relative path, or embedded (pasted in, or base64 inside the `.md`), plus raw inline `<svg>` drawings.
+- **Anki decks**: import `.apkg` files from any Anki version, images included, and
+  export any deck back to `.apkg`. *Notes in Plain Text* exports work too.
 - **Mobile friendly**, with controls you can reach with a thumb.
 - **Edit in the app or your editor.** Tweak a deck right in the browser (paste an
   image and it embeds as base64), or edit the `.md` file and re-import.
 - **Progress travels inside the markdown**: exporting bakes your stats into
   hidden comments, so you can move decks between devices or back them up.
-- **Stored locally**: decks live in your browser (IndexedDB, so big embedded
-  images fit), progress in `localStorage`. Nothing leaves your machine.
+- **Stored locally**: decks and their images live in your browser (IndexedDB),
+  progress in `localStorage`. Nothing leaves your machine.
 
 ## What's new
 
+- **Anki `.apkg` import and export.** Import packages from any Anki version (including
+  the zstd-compressed format of Anki 2.1.50+), with their images. Export any deck as an
+  `.apkg` that Anki can import, images included.
+- **Images stored as files.** Pasted and imported images are kept next to the deck in
+  IndexedDB instead of as base64 text, and cards point at them with
+  `![](media:name.png)`. Exporting `.md` puts them back in as base64, so the file is
+  still self-contained. Existing decks are converted on first load, progress included.
 - **Cloze deletions.** Hide words with `{{...}}` (and `{{answer::hint}}`). Study
   them by recall or by typing the missing word.
 - **Anki import.** Drop in an Anki *Notes in Plain Text* export and it's converted
@@ -99,17 +108,45 @@ any typed answer. In the other modes you reveal and self-grade. Anki's
 `{{c1::...}}` group syntax is accepted too — a note with several groups becomes one
 card per group, the same way Anki splits them.
 
-### Importing from Anki
+### Images
 
-In Anki, **File → Export → Notes in Plain Text (`.txt`)**, then import or paste the
-file here. magpie reads the tab/CSV export, converts the basic formatting (bold,
-italics, line breaks, images, cloze) to markdown, and stores it as an ordinary deck
-you can edit and re-export. `Front`/`Back` become the two faces, and cloze notes
-stay cloze.
+Link an image by URL or relative path, or embed it. Paste an image into the editor, or
+import a `.md` with base64 `data:` images, and it's stored with the deck in IndexedDB.
+The card then points at it by name:
 
-Media isn't included in that text export, so image and audio references won't
-resolve unless you embed them yourself. Packaged `.apkg` files (a zipped database)
-aren't supported — exporting as plain text keeps magpie dependency-free.
+```markdown
+Which bird is this?
+![](media:magpie.jpg)
+---
+A magpie.
+```
+
+*Export .md* turns those back into base64 `data:` URIs, with the file name kept as a
+parameter (`data:image/jpeg;name=magpie.jpg;base64,...`). The exported file stands on
+its own, and importing it restores the same names, so progress still matches the cards.
+
+### Anki decks (`.apkg`)
+
+Import an `.apkg` (a shared deck, or **File → Export → Anki Deck Package** in Anki)
+from any Anki version. The older SQLite + JSON packages and the zstd-compressed ones
+from Anki 2.1.50+ both work.
+
+- Each card is rendered from its note type's templates (fields, `{{#Field}}`
+  conditionals, `cloze:`), so reversed and custom note types come out as the cards
+  Anki would show. The result is converted to markdown.
+- Images come along. Audio is dropped.
+- Cloze notes stay cloze, one card per group.
+- MathJax (`\(...\)`, `\[...\]`) and `[$]...[/$]` become magpie math.
+- Subdecks merge into one deck named after the top-level deck.
+- Scheduling isn't imported, so every card starts new.
+
+*Export .apkg* writes an older-style package that every Anki version imports, with the
+deck's images. Normal cards use a *magpie Basic* note type (Front/Back) and cloze cards
+a *magpie Cloze* one (Text/Back Extra). Exporting the same deck again updates those
+notes in Anki instead of duplicating them.
+
+Anki's **Notes in Plain Text (`.txt`)** export still works: import or paste it. That
+format carries no media, so image references won't resolve unless you embed them.
 
 ### Progress in exported files
 
@@ -167,7 +204,8 @@ shows up at `https://<user>.github.io/<repo>/`.
 | `index.html` | Markup / views (served from the repo root) |
 | `public/css/styles.css` | Styling + light/dark theme |
 | `public/js/app.js` | Entry point: fullscreen + init wiring (loaded last) |
-| `public/js/src/` | App modules: `util`, `config`, `markdown`, `deck`, `samples`, `study`, `views` |
+| `public/js/src/` | App modules: `util`, `config`, `store` (IndexedDB), `media`, `markdown`, `deck`, `apkg`, `samples`, `study`, `views` |
+| `public/vendor/` | sql.js and fzstd for `.apkg` files, loaded on demand (see its README) |
 | `public/favicon.svg` | magpie icon (tab + header) |
 | `public/decks/` | Sample decks (also embedded in `samples.js`) + your local decks |
 

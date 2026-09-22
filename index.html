@@ -6,7 +6,7 @@
 <title>magpie.md</title>
 <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" crossorigin="anonymous" />
-<link rel="stylesheet" href="public/css/styles.css?v=5" />
+<link rel="stylesheet" href="public/css/styles.css?v=6" />
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
@@ -38,10 +38,10 @@
           <button class="btn ghost" id="pasteBtn">Paste</button>
         </div>
       </div>
-      <input type="file" id="fileInput" accept=".md,.markdown,.txt,.tsv,.csv,text/markdown,text/plain" hidden multiple />
+      <input type="file" id="fileInput" accept=".md,.markdown,.txt,.tsv,.csv,.apkg,.colpkg,text/markdown,text/plain" hidden multiple />
       <ul id="deckList" class="deck-list"></ul>
       <p id="emptyHint" class="hint hidden">
-        No decks yet. Import a <code>.md</code> file, paste one, or try a sample below.
+        No decks yet. Import a <code>.md</code> file or an Anki <code>.apkg</code>, paste one, or try a sample below.
       </p>
     </div>
 
@@ -86,8 +86,10 @@ The **kilogram** (kg).
       <ul class="hint">
         <li><strong>Link</strong> to it - a full <code>https://</code> URL or a path relative to
         the page.</li>
-        <li><strong>Embed</strong> it - a <code>data:</code> URI with the image as base64, stored
-        right inside the <code>.md</code> so it travels with the deck and works offline.</li>
+        <li><strong>Embed</strong> it - paste an image into the editor, or use a <code>data:</code>
+        URI with the image as base64. Embedded images are stored with the deck in your browser
+        (the card shows <code>![alt](media:name.png)</code>) and go back into the <code>.md</code>
+        as base64 when you export, so the file travels with its images and works offline.</li>
       </ul>
       <p class="hint">You can also paste raw <code>&lt;svg&gt;...&lt;/svg&gt;</code> straight into a
       card to draw crisp, scalable graphics inline (scripts and event handlers are stripped for
@@ -141,15 +143,18 @@ A favourite exam factoid.
       <p class="hint">Anki's <code>{{c1::...}}</code> group syntax is accepted too. On import a note
       with several groups becomes one card per group, just like in Anki.</p>
 
-      <h4>Importing from Anki</h4>
-      <p class="hint">In Anki choose <em>File &rarr; Export &rarr; Notes in Plain Text (.txt)</em>,
-      then import or paste that file here. magpie reads the tab/CSV export, converts basic
-      formatting (bold, italics, line breaks, images, cloze) to markdown, and turns it into an
-      ordinary deck you can edit and re-export. One note per row. <code>Front</code>/<code>Back</code>
-      become the two faces, and cloze notes stay cloze.</p>
-      <p class="hint">Media isn't part of that text export, so image/audio references won't resolve
-      unless you embed them yourself. Packaged <code>.apkg</code> files (zipped database) aren't
-      supported - export as plain text instead.</p>
+      <h4>Anki decks (.apkg)</h4>
+      <p class="hint">Import an Anki <code>.apkg</code> (a shared deck, or <em>File &rarr; Export
+      &rarr; Anki Deck Package</em>), from any Anki version. Each card is rendered from its note
+      type's templates and converted to markdown: formatting, images, cloze and MathJax come
+      along, and audio is dropped. Subdecks are merged into one deck named after the top-level
+      deck. Anki's scheduling isn't imported, so every card starts new.</p>
+      <p class="hint"><em>Export .apkg</em> writes a package any Anki version can import, with
+      its images. Normal cards use a <em>magpie Basic</em> note type (Front/Back) and cloze cards
+      a <em>magpie Cloze</em> one. Exporting the same deck again updates those notes in Anki
+      instead of duplicating them.</p>
+      <p class="hint">Anki's <em>Notes in Plain Text (.txt)</em> export works too: import or paste
+      it. That format has no media, so image references won't resolve unless you embed them.</p>
 
       <h4>Saved progress (in exports)</h4>
       <p class="hint"><em>Export .md + progress</em> appends a hidden comment per studied card. It
@@ -182,9 +187,10 @@ The capital of France.
         <button class="btn ghost mini" id="editToggle" title="Show full base64 &amp; SVG">…</button>
       </div>
       <textarea id="editArea" class="paste-area"></textarea>
-      <p class="hint">Paste an image to embed it as base64. Long base64 and inline SVG are shown
-      truncated as <code>⟪…⟫</code>. Toggle <code>…</code> to see them in full. Editing a card's
-      question starts that card's progress over. Editing the answer keeps it.</p>
+      <p class="hint">Paste an image to add it at the cursor as <code>![](media:…)</code>. It's
+      stored with the deck and exported inside the <code>.md</code> as base64. Inline SVG and any
+      remaining base64 are shown truncated as <code>⟪…⟫</code>. Toggle <code>…</code> to see them in
+      full. Editing a card's question starts that card's progress over. Editing the answer keeps it.</p>
       <div class="row end">
         <button class="btn ghost" id="editCancel">Cancel</button>
         <button class="btn" id="editSave">Save changes</button>
@@ -200,6 +206,7 @@ The capital of France.
         <button class="btn ghost" id="editDeck">Edit</button>
         <button class="btn ghost" id="exportPlain">Export .md</button>
         <button class="btn ghost" id="exportProgress">Export .md + progress</button>
+        <button class="btn ghost" id="exportApkg">Export .apkg</button>
       </div>
     </div>
     <div class="panel">
@@ -311,14 +318,18 @@ The capital of France.
   <a href="https://github.com/jedinyphilip/magpie-md" target="_blank" rel="noopener">Source on GitHub</a>
 </footer>
 
-<!-- scripts in load order - no modules, so file:// works -->
-<script src="public/js/src/util.js?v=5"></script>
-<script src="public/js/src/config.js?v=5"></script>
-<script src="public/js/src/markdown.js?v=5"></script>
-<script src="public/js/src/deck.js?v=5"></script>
-<script src="public/js/src/samples.js?v=5"></script>
-<script src="public/js/src/study.js?v=5"></script>
-<script src="public/js/src/views.js?v=5"></script>
-<script src="public/js/app.js?v=5"></script>
+<!-- scripts in load order - no modules, so file:// works. public/vendor/ (sql.js, zstd)
+     is loaded on demand by apkg.js -->
+<script src="public/js/src/util.js?v=6"></script>
+<script src="public/js/src/config.js?v=6"></script>
+<script src="public/js/src/store.js?v=6"></script>
+<script src="public/js/src/media.js?v=6"></script>
+<script src="public/js/src/markdown.js?v=6"></script>
+<script src="public/js/src/deck.js?v=6"></script>
+<script src="public/js/src/apkg.js?v=6"></script>
+<script src="public/js/src/samples.js?v=6"></script>
+<script src="public/js/src/study.js?v=6"></script>
+<script src="public/js/src/views.js?v=6"></script>
+<script src="public/js/app.js?v=6"></script>
 </body>
 </html>

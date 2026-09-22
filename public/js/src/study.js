@@ -3,7 +3,8 @@
 
 let session = null;
 
-function startStudy() {
+async function startStudy() {
+  await mediaReady;          // the deck's images, loaded by openDeck
   const prog = loadJSON(LS_PROGRESS(currentDeckId), {});
   // order the whole deck, then take the top N for a subset
   const ordered = orderCards(currentParsed.cards, prog, settings.order);

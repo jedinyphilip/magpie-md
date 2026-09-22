@@ -47,11 +47,11 @@ async function init() {
   $('#fileInput').addEventListener('change', (e) => { importFiles(e.target.files); e.target.value = ''; });
 
   // paste
-  $('#pasteBtn').addEventListener('click', () => { $('#pasteArea').value = ''; show('pasteView'); });
+  $('#pasteBtn').addEventListener('click', () => { $('#pasteArea').value = ''; pendingMedia = new Map(); show('pasteView'); });
   $('#pasteCancel').addEventListener('click', renderHome);
   $('#pasteImport').addEventListener('click', () => {
-    const id = addDeckFromText($('#pasteArea').value);
-    if (id) openDeck(id);
+    const id = addDeckFromText($('#pasteArea').value, pendingMedia);
+    if (id) { pendingMedia = new Map(); openDeck(id); }
   });
   $('#pasteArea').addEventListener('paste', handleImagePaste);
 
@@ -66,8 +66,7 @@ async function init() {
   $('#deckBack').addEventListener('click', renderHome);
   $('#deleteDeck').addEventListener('click', () => {
     if (!confirm('Delete this deck and its progress from this browser?')) return;
-    const decks = getDecks(); delete decks[currentDeckId]; setDecks(decks);
-    localStorage.removeItem(LS_PROGRESS(currentDeckId));
+    removeDeck(currentDeckId);
     renderHome();
   });
   $('#resetProgress').addEventListener('click', () => {
@@ -77,6 +76,7 @@ async function init() {
   });
   $('#exportPlain').addEventListener('click', () => exportDeck(false));
   $('#exportProgress').addEventListener('click', () => exportDeck(true));
+  $('#exportApkg').addEventListener('click', exportDeckApkg);
 
   $$('#modeSeg button').forEach((b) => b.addEventListener('click', () => {
     settings.mode = b.dataset.mode; saveSettings(); syncSegs();
