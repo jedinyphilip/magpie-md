@@ -195,7 +195,12 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .face .cloze { color: var(--accent); font-weight: 700; }
 .divider { height: 1px; background: var(--border); margin: 22px 0; }
 .divider.hidden { display: none; }
-.card-badge { position: absolute; top: 12px; right: 14px; font-size: 12px; color: var(--muted); }
+/* The badge gets its own row in the top-right corner (pulled up into the
+   padding), so it never sits on a picture. The auto margins centre the card's
+   content in the space below it. */
+.card-badge { align-self: flex-end; margin: -20px -18px 10px 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.flashcard > .face.front { margin-top: auto; }
+.flashcard::after { content: ''; margin-top: auto; }
 
 .face h1,.face h2,.face h3 { margin: .3em 0; }
 .face p { margin: .5em 0; }
@@ -302,7 +307,7 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
   /* Roomier cards, smaller fixed chrome */
   .flashcard { min-height: 0; padding: 22px 18px; }
   .face { font-size: 18px; }
-  .card-badge { position: static; display: block; margin-bottom: 10px; }
+  .card-badge { margin: -12px -8px 8px 0; }
 
   /* Keep the answer / grade controls within thumb reach at the bottom */
   .study-actions {
