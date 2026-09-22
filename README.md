@@ -176,6 +176,10 @@ the result as match / close / no match. It only suggests a grade, you still
 confirm. For multiple-choice cards in this mode, either the correct letter or the
 option text is accepted.
 
+Modes a deck can't use are greyed out: *Choice* needs multiple-choice cards, and
+*Type answer* needs answers in words (a deck whose answers are all pictures has
+nothing to type). Your chosen mode is kept for the decks that do support it.
+
 **Order.** *Weighted* (unseen and previously-wrong cards first), *Shuffle*, or
 *Original*.
 

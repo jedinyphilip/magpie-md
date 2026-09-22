@@ -121,12 +121,22 @@ function loadSamples() {
 
 let currentDeckId = null;
 let currentParsed = null;
+let currentModes = { flip: true, choice: true, type: true };   // modeSupport() of the open deck
+
+const MODE_UNSUPPORTED = {
+  choice: 'No multiple-choice cards in this deck',
+  type: 'Every answer in this deck is a picture, so there is nothing to type',
+};
+// the saved mode when this deck can use it, otherwise Flip. The setting itself
+// is left alone, so the next deck that supports it gets it back.
+const studyMode = () => (currentModes[settings.mode] ? settings.mode : 'flip');
 
 function openDeck(id) {
   const decks = getDecks();
   if (!decks[id]) return renderHome();
   currentDeckId = id;
   currentParsed = parseDeck(decks[id].source);
+  currentModes = modeSupport(currentParsed.cards);
   useDeckMedia(id);          // start loading its images; startStudy waits for them
 
   $('#deckTitle').textContent = currentParsed.title;
@@ -143,12 +153,18 @@ function renderDeckStats() {
 }
 
 function syncSegs() {
-  $$('#modeSeg button').forEach((b) => b.classList.toggle('active', b.dataset.mode === settings.mode));
+  const mode = studyMode();
+  $$('#modeSeg button').forEach((b) => {
+    const ok = currentModes[b.dataset.mode];
+    b.disabled = !ok;
+    b.title = ok ? '' : MODE_UNSUPPORTED[b.dataset.mode];
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
   $$('#orderSeg button').forEach((b) => b.classList.toggle('active', b.dataset.order === settings.order));
   $$('#hintsSeg button').forEach((b) => b.classList.toggle('active', b.dataset.hints === settings.hints));
-  $('#hintsCfg').classList.toggle('hidden', settings.mode !== 'flip');  // hints only matter in flip
+  $('#hintsCfg').classList.toggle('hidden', mode !== 'flip');  // hints only matter in flip
   $$('#shuffleSeg button').forEach((b) => b.classList.toggle('active', b.dataset.shuffle === settings.shuffleAnswers));
-  $('#shuffleCfg').classList.toggle('hidden', settings.mode !== 'choice');  // only choice shows options
+  $('#shuffleCfg').classList.toggle('hidden', mode !== 'choice');  // only choice shows options
   $$('#sessionSeg button').forEach((b) => b.classList.toggle('active', b.dataset.session === settings.session));
   $('#cramHint').classList.toggle('hidden', settings.session !== 'cram');
 

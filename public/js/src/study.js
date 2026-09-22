@@ -11,7 +11,7 @@ async function startStudy() {
   const queue = settings.count === 'all'
     ? ordered
     : ordered.slice(0, Math.min(parseInt(settings.count, 10), ordered.length));
-  session = { queue, i: 0, revealed: false, mode: settings.mode, right: 0, wrong: 0, prog };
+  session = { queue, i: 0, revealed: false, mode: studyMode(), right: 0, wrong: 0, prog };
   // cram: missed cards go back into the queue until every card has been answered right
   if (settings.session === 'cram') Object.assign(session, { cram: true, total: queue.length, learned: 0, misses: new Map() });
   show('studyView');

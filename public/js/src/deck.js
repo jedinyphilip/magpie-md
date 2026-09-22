@@ -218,6 +218,21 @@ function parseCloze(card) {
   return { template, answers, blanks, reveals };
 }
 
+// Which study modes a deck's cards can use. Flip always works; Choice needs at
+// least one multiple-choice card, Type answer at least one answer in words
+// (cloze and MC answers count, a back that is only a picture doesn't).
+function modeSupport(cards) {
+  const words = (md) => md.replace(/<svg\b[\s\S]*?<\/svg>/gi, '').replace(/!\[[^\]]*\]\([^)]*\)/g, '').trim() !== '';
+  const ok = { flip: true, choice: false, type: false };
+  for (const c of cards) {
+    const cloze = parseCloze(c);
+    if (!cloze && parseChoices(c)) ok.choice = ok.type = true;
+    else if (cloze || words(c.back)) ok.type = true;
+    if (ok.choice && ok.type) break;
+  }
+  return ok;
+}
+
 // Convert an Anki "Notes in Plain Text" (TSV/CSV) export into markdown so it
 // runs through parseDeck. Markdown stays the source of truth; .apkg files go
 // through apkg.js instead.
