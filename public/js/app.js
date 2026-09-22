@@ -138,26 +138,17 @@ async function init() {
   $$('#printLayoutSeg button').forEach((b) => b.addEventListener('click', () => {
     settings.printLayout = b.dataset.layout; saveSettings(); relayout();
   }));
-  $$('#printSizeModeSeg button').forEach((b) => b.addEventListener('click', () => {
-    settings.printSizeMode = b.dataset.sizeMode; saveSettings(); relayout();
-  }));
-  // Card size: show the value while dragging, lay out again once it settles
+  // card size and font: lay out again once typing settles
   let sizeTimer = null;
   const cardDims = () => {
     settings.printCardW = Number($('#printCardW').value) || settings.printCardW;
     settings.printCardH = Number($('#printCardH').value) || settings.printCardH;
+    settings.printFontPt = Number($('#printFont').value) || settings.printFontPt;
     saveSettings();
     clearTimeout(sizeTimer);
     sizeTimer = setTimeout(relayout, 500);
   };
-  $('#printCardW').addEventListener('input', cardDims);
-  $('#printCardH').addEventListener('input', cardDims);
-  $('#printSize').addEventListener('input', (e) => {
-    settings.printScale = Number(e.target.value); saveSettings();
-    $('#printSizeValue').textContent = settings.printScale + '%';
-    clearTimeout(sizeTimer);
-    sizeTimer = setTimeout(relayout, 250);
-  });
+  ['#printCardW', '#printCardH', '#printFont'].forEach((id) => $(id).addEventListener('input', cardDims));
   window.addEventListener('resize', () => { if (!$('#printView').classList.contains('hidden')) scalePrintPreview(); });
 
   $$('#modeSeg button').forEach((b) => b.addEventListener('click', () => {

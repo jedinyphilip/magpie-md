@@ -32,7 +32,7 @@ smaller batch.
 ## What's new
 
 - **Printable cards.** *Print / PDF* on a deck lays its cards out on A4 or Letter
-  pages, each card sized to its content and packed (turned sideways where that fits
+  pages at the card and font size you give, packed (turned sideways where that fits
   better) to use as little paper as possible. Print it, or save it as a PDF.
 - **Cram mode.** Set *Session* to *Cram* and missed cards keep coming back a few
   cards later until you've got every one right.
@@ -175,32 +175,23 @@ back keeps the progress while editing a front starts that card fresh.
 Letter), a layout and a card size, then print, or choose *Save as PDF* in the print
 dialog. Keep the scale at 100%.
 
-**Cards** chooses how the cards are sized:
-
-- *Fit to content* (default): every card gets the smallest size that fits it, so a
-  deck ends up with cards of a few different sizes. The **Card size** slider
-  (60-160%) scales the text and how large pictures must print, so a larger setting
-  gives bigger, easier-to-read cards on more pages.
-- *Same size*: you give a width and height in mm and every card is exactly that,
-  for pre-cut cards or a tidy stack. Content that doesn't fit a card is scaled down
-  to it, pictures included; content that is smaller sits centred with space around
-  it. A size that can't fit the page is refused, with the largest one that does.
+**Card size** is a width and a height in millimetres, and every card is printed at
+exactly that size. **Font size** sets the text on the cards in points. Content that
+doesn't fit a card is scaled down to it, pictures included; content that is smaller
+sits centred with space around it, and the summary says how many cards had to be
+scaled. A size that can't fit the page is refused, with the largest one that does.
 
 - **Fold-over** (default): each card is printed front and back side by side. Cut it
   out along its outline and fold it on the dashed line. Works on any printer.
-- **Double-sided**: fronts on one page, backs on the next. Print double-sided,
-  flipping on the long edge, and each back lands on its front. Backs are mirrored,
-  and a card turned sideways on the front is turned the other way on the back. A small
-  gap between cards absorbs a printer that doesn't line both sides up exactly.
+- **Long side** / **Short side**: double-sided, fronts on one page and backs on the
+  next. Pick the one your printer flips on (its duplex setting), and each back lands
+  on its front. For a long-side flip the backs are mirrored left to right; for a
+  short-side flip they are mirrored top to bottom and printed upside down, so a back
+  reads upright when you turn the cut-out card over. A small gap between cards
+  absorbs a printer that doesn't line both sides up exactly.
 
-Every card gets the smallest size that fits its front and back: a short question gets
-a small card, a card with a big image or a long answer a larger one. Pictures print at
-least half their natural size, so text in them (screenshots, rendered notes) stays
-readable. A card with a big picture gets a bigger card, up to one laid sideways
-across the page. Card widths are fractions of the printable width, so cards fill whole
-rows. The cards are then packed
-onto the pages largest first, each placed where it leaves the least unused space and
-turned sideways when that fits better. Each card carries its number in the corner, on
+The cards are packed onto the pages largest first, each placed where it leaves the
+least unused space and turned sideways when that fits better. Each card carries its number in the corner, on
 both sides.
 
 ## Study options

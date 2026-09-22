@@ -1,17 +1,16 @@
 'use strict';
-// Printable cards (Print, or Save as PDF from the print dialog). Every card
-// gets the smallest size that fits its content, then the cards are packed onto
-// the pages - turned sideways where that fits better - so little paper is wasted.
+// Printable cards (Print, or Save as PDF from the print dialog). Every card is
+// the same size, given in mm, and the cards are packed onto the pages - turned
+// sideways where that fits better - so little paper is wasted. Content that
+// doesn't fit a card is scaled down to it; smaller content sits centred in it.
 // Fold-over: front and back side by side; cut out, fold on the dashed line.
-// Double-sided: fronts on one page, backs on the next, mirrored so they land on
-// their card when printed double-sided, flipping on the long edge.
+// Double-sided: fronts on one page, backs on the next, placed so they land on
+// their card for the flip the printer makes - long side (backs mirrored left to
+// right) or short side (mirrored top to bottom, and upside down).
 
 const PAPER = { a4: { w: 210, h: 297, name: 'A4' }, letter: { w: 215.9, h: 279.4, name: 'Letter' } };
 const PRINT_MARGIN = 8;                          // mm; most printers can't reach the edge
 const CARD_PAD = 4;                              // mm inside each face
-const MIN_CARD_W = 40;                           // mm; narrower cards are too cramped for text
-const MIN_IMAGE_SCALE = 0.5;                     // images print at least half their natural size, so text in them stays legible
-const BASE_FONT = 9.5;                           // pt; the Card size slider scales this and MIN_IMAGE_SCALE
 const DUPLEX_GAP = 4;                            // mm; a slightly shifted back still lands on its card
 const EPS = 0.01;
 
@@ -37,78 +36,31 @@ function imagesLoaded(el) {
   }));
 }
 
-// Card widths that tile the printable width: 1, 2, 3 or 4 printed pieces
-// (with their gaps) fill a row exactly, so columns of cards leave no strips.
-// Plus one as long as the printable height, laid sideways, for big pictures.
-// A fold-over piece is two cards wide.
-function cardWidths(uw, uh, fold, gap) {
-  const out = [];
-  const add = (piece) => {
-    const w = Math.floor((fold ? piece / 2 : piece) * 10) / 10;
-    if (w >= MIN_CARD_W && !out.includes(w)) out.push(w);
-  };
-  for (let k = 1; k <= 4; k++) add((uw - (k - 1) * gap) / k);
-  add(uh);
-  return out.sort((a, b) => a - b);
-}
-
-// For every card and candidate width: the content height (mm) of its taller
-// face, and how small its images come out (shown width / natural width),
-// laid out in one pass in a hidden stage.
-async function measureFaces(faces, widths, stage, imgMaxH) {
+// The content height (mm) of each card's taller face at the card's width,
+// measured in one pass in a hidden stage.
+async function measureFaces(faces, width, stage, imgMaxH) {
   stage.innerHTML = '<div style="width:100mm"></div>';
   const pxPerMm = stage.firstChild.getBoundingClientRect().width / 100;
   stage.innerHTML = '';
   const boxes = [];
   const frag = document.createDocumentFragment();
   faces.forEach((f, i) => {
-    for (const w of widths) {
-      for (const side of ['front', 'back']) {
-        const el = document.createElement('div');
-        el.className = 'pbody ' + side;
-        el.style.width = (w - 2 * CARD_PAD) + 'mm';
-        if (imgMaxH) el.style.setProperty('--pimgmax', imgMaxH + 'mm');
-        el.innerHTML = f[side];
-        frag.appendChild(el);
-        boxes.push({ i, w, el });
-      }
+    for (const side of ['front', 'back']) {
+      const el = document.createElement('div');
+      el.className = 'pbody ' + side;
+      el.style.width = (width - 2 * CARD_PAD) + 'mm';
+      el.style.setProperty('--pimgmax', imgMaxH + 'mm');
+      el.innerHTML = f[side];
+      frag.appendChild(el);
+      boxes.push({ i, el });
     }
   });
   stage.appendChild(frag);
   await imagesLoaded(stage);
-  const need = faces.map(() => ({}));
-  for (const b of boxes) {
-    const n = need[b.i][b.w] || (need[b.i][b.w] = { h: 0, img: 1 });
-    n.h = Math.max(n.h, b.el.getBoundingClientRect().height / pxPerMm);
-    for (const img of b.el.querySelectorAll('img')) {
-      if (img.naturalWidth) n.img = Math.min(n.img, img.getBoundingClientRect().width / img.naturalWidth);
-    }
-  }
+  const need = faces.map(() => 0);
+  for (const b of boxes) need[b.i] = Math.max(need[b.i], b.el.getBoundingClientRect().height / pxPerMm);
   stage.innerHTML = '';
   return need;
-}
-
-// Smallest card (by area) that fits the content and stays card-shaped (height
-// 0.55-1.25x the width), and whose printed piece fits on the page. Only widths
-// that show the card's images at least minImg of their size count; if none do, the widest one.
-// Content too long for any of those gets the widest card, as tall as the page
-// allows, shrunk if even that isn't enough.
-function cardSize(need, widths, fits, minImg) {
-  const onPage = widths.filter((w) => fits(w, 1));
-  const legible = onPage.filter((w) => need[w].img >= minImg);
-  const usable = legible.length ? legible : onPage.slice(-1);
-  let best = null;
-  for (const w of usable) {
-    const h = Math.ceil(Math.max(need[w].h + 2 * CARD_PAD, w * 0.55));
-    if (h > w * 1.25 || !fits(w, h)) continue;
-    if (!best || w * h < best.w * best.h) best = { w, h, scale: 1 };
-  }
-  if (best) return best;
-  const w = usable[usable.length - 1];
-  let maxH = 1;
-  while (fits(w, maxH + 1)) maxH++;
-  const h = Math.ceil(need[w].h + 2 * CARD_PAD);
-  return h <= maxH ? { w, h, scale: 1 } : { w, h: maxH, scale: (maxH - 2 * CARD_PAD) / (h - 2 * CARD_PAD) };
 }
 
 // MaxRects packing (best short side fit, rotation allowed) onto as many pages
@@ -158,23 +110,15 @@ function packPieces(pieces, binW, binH, gap) {
 // One size for every card: content that doesn't fit is scaled down, content
 // that is smaller sits centred in the space (both handled by faceHtml).
 function fixedSize(need, w, h) {
-  const room = h - 2 * CARD_PAD;
-  const scale = Math.min(1, room / Math.max(need[w].h, 0.1));
-  return { w, h, scale };
+  return { w, h, scale: Math.min(1, (h - 2 * CARD_PAD) / Math.max(need, 0.1)) };
 }
 
 // Card sizes, pieces and pages for the current deck and options.
-function layoutCards(faces, need, widths, paper, fold, minImg = MIN_IMAGE_SCALE, fixed = null) {
+function layoutCards(faces, need, paper, fold, card) {
   const uw = paper.w - 2 * PRINT_MARGIN, uh = paper.h - 2 * PRINT_MARGIN;
-  const piece = (w, h) => (fold ? [2 * w, h] : [w, h]);
-  const fits = (w, h) => {
-    const [a, b] = piece(w, h);
-    return (a <= uw && b <= uh) || (a <= uh && b <= uw);
-  };
   const pieces = faces.map((f, i) => {
-    const size = fixed ? fixedSize(need[i], fixed.w, fixed.h) : cardSize(need[i], widths, fits, minImg);
-    const [w, h] = piece(size.w, size.h);
-    return { i, w, h, card: size };
+    const size = fixedSize(need[i], card.w, card.h);
+    return { i, w: fold ? 2 * size.w : size.w, h: size.h, card: size };
   });
   return { pages: packPieces(pieces, uw, uh, fold ? 0 : DUPLEX_GAP), pieces };
 }
@@ -188,17 +132,30 @@ function faceHtml(html, i, size, side, left) {
 }
 
 // A placed piece. It is drawn unrotated at w x h and turned into its slot:
-// rot 90 = clockwise, -90 = anticlockwise (the mirrored back of a turned card).
+// rot 90 = clockwise, -90 = anticlockwise, 180 = upside down. mirror puts the
+// slot on the opposite side of the page: 'x' for a long-side flip, 'y' for a
+// short-side one.
 function pieceHtml(item, paper, inner, rot, mirror) {
   const { w, h } = item.piece;
   const sw = item.rot ? h : w, sh = item.rot ? w : h;
-  const x = mirror ? paper.w - PRINT_MARGIN - item.x - sw : PRINT_MARGIN + item.x;
-  const turn = rot === 90 ? `transform:translateX(${h}mm) rotate(90deg)` : rot === -90 ? `transform:translateY(${w}mm) rotate(-90deg)` : '';
-  return `<div class="ppiece" style="left:${x}mm;top:${PRINT_MARGIN + item.y}mm;width:${sw}mm;height:${sh}mm">`
+  const x = mirror === 'x' ? paper.w - PRINT_MARGIN - item.x - sw : PRINT_MARGIN + item.x;
+  const y = mirror === 'y' ? paper.h - PRINT_MARGIN - item.y - sh : PRINT_MARGIN + item.y;
+  const turn = rot === 90 ? `transform:translateX(${h}mm) rotate(90deg)`
+    : rot === -90 ? `transform:translateY(${w}mm) rotate(-90deg)`
+    : rot === 180 ? `transform:translate(${w}mm, ${h}mm) rotate(180deg)` : '';
+  return `<div class="ppiece" style="left:${x}mm;top:${y}mm;width:${sw}mm;height:${sh}mm">`
     + `<div class="pcard" style="width:${w}mm;height:${h}mm;${turn}">${inner}</div></div>`;
 }
 
-function renderPrintPages(faces, layout, paper, fold, title) {
+// Where a back goes for the printer's flip. Long side: the sheet turns about
+// its vertical axis, so the back is mirrored left to right and a turned card
+// turns the other way. Short side: it turns about the horizontal axis, so the
+// back is mirrored top to bottom and an unturned card prints upside down.
+const backPlacement = (turned, shortSide) => (shortSide
+  ? { rot: turned ? 90 : 180, mirror: 'y' }
+  : { rot: turned ? -90 : 0, mirror: 'x' });
+
+function renderPrintPages(faces, layout, paper, fold, title, shortSide) {
   const out = [];
   const page = (items, label) => out.push(`<div class="ppage-wrap"><div class="ppage" style="width:${paper.w}mm;height:${paper.h}mm">${items}`
     + `<div class="pfoot">${escapeHtml(title)} · ${label}</div></div></div>`);
@@ -209,11 +166,14 @@ function renderPrintPages(faces, layout, paper, fold, title) {
       page(items.map((it) => {
         const { i, card } = it.piece;
         const inner = faceHtml(faces[i].front, i, card, 'front', 0) + faceHtml(faces[i].back, i, card, 'back', card.w) + '<div class="pfold"></div>';
-        return pieceHtml(it, paper, inner, it.rot ? 90 : 0, false);
+        return pieceHtml(it, paper, inner, it.rot ? 90 : 0, null);
       }).join(''), num);
     } else {
-      page(items.map((it) => pieceHtml(it, paper, faceHtml(faces[it.piece.i].front, it.piece.i, it.piece.card, 'front', 0), it.rot ? 90 : 0, false)).join(''), `fronts, ${num}`);
-      page(items.map((it) => pieceHtml(it, paper, faceHtml(faces[it.piece.i].back, it.piece.i, it.piece.card, 'back', 0), it.rot ? -90 : 0, true)).join(''), `backs, ${num}`);
+      page(items.map((it) => pieceHtml(it, paper, faceHtml(faces[it.piece.i].front, it.piece.i, it.piece.card, 'front', 0), it.rot ? 90 : 0, null)).join(''), `fronts, ${num}`);
+      page(items.map((it) => {
+        const back = backPlacement(it.rot, shortSide);
+        return pieceHtml(it, paper, faceHtml(faces[it.piece.i].back, it.piece.i, it.piece.card, 'back', 0), back.rot, back.mirror);
+      }).join(''), `backs, ${num}`);
     }
   });
   return out.join('');
@@ -235,26 +195,23 @@ function scalePrintPreview() {
 async function buildPrintView() {
   const job = ++printJob;
   const paper = PAPER[settings.printPaper] || PAPER.a4;
-  const fold = settings.printLayout !== 'duplex';
-  const fixedMode = settings.printSizeMode === 'fixed';
-  // Card size: scales the text and how large pictures must print; cards follow.
-  // With one size for every card the text stays at its normal size and the
-  // content is scaled down only where it doesn't fit.
-  const scale = fixedMode ? 1 : (settings.printScale || 100) / 100;
-  $('#printView').style.setProperty('--pfont', BASE_FONT * scale + 'pt');
-  $('#printSize').value = settings.printScale || 100;
-  $('#printSizeValue').textContent = (settings.printScale || 100) + '%';
-  $$('#printSizeModeSeg button').forEach((b) => b.classList.toggle('active', b.dataset.sizeMode === (fixedMode ? 'fixed' : 'fit')));
-  $('#printScaleCfg').classList.toggle('hidden', fixedMode);
-  $('#printDimsCfg').classList.toggle('hidden', !fixedMode);
-  $('#printCardW').value = settings.printCardW;
-  $('#printCardH').value = settings.printCardH;
+  const mode = settings.printLayout === 'duplex' ? 'long' : (settings.printLayout || 'fold');   // 'duplex' is what older versions saved
+  const fold = mode === 'fold', shortSide = mode === 'short';
+  const card = {
+    w: Math.min(400, Math.max(20, Math.round(settings.printCardW) || 90)),
+    h: Math.min(400, Math.max(20, Math.round(settings.printCardH) || 55)),
+  };
+  const font = Math.min(24, Math.max(4, Number(settings.printFontPt) || 9.5));
+  $('#printView').style.setProperty('--pfont', font + 'pt');
+  $('#printCardW').value = card.w;
+  $('#printCardH').value = card.h;
+  $('#printFont').value = font;
   $$('#printPaperSeg button').forEach((b) => b.classList.toggle('active', b.dataset.paper === settings.printPaper));
-  $$('#printLayoutSeg button').forEach((b) => b.classList.toggle('active', b.dataset.layout === settings.printLayout));
+  $$('#printLayoutSeg button').forEach((b) => b.classList.toggle('active', b.dataset.layout === mode));
   $('#printHint').textContent = (fold
     ? 'Cut out each card along its outline and fold it on the dashed line, front outward.'
-    : 'Print double-sided, flipping on the long edge, then cut the cards out along their outlines.')
-    + (fixedMode ? ' Content that does not fit a card is scaled down to it; smaller content sits centred in the space.' : '');
+    : `Print double-sided with your printer set to flip on the ${shortSide ? 'short' : 'long'} side, then cut the cards out along their outlines.`)
+    + ' Content that does not fit a card is scaled down to it; smaller content sits centred in the space.';
   $('#printInfo').textContent = 'Laying out cards...';
   $('#printGo').disabled = true;
   $('#printPages').innerHTML = '';
@@ -266,48 +223,42 @@ async function buildPrintView() {
     const [a, b] = fold ? [2 * w, h] : [w, h];
     return (a <= uw && b <= uh) || (a <= uh && b <= uw);
   };
-  let fixed = null;
-  if (fixedMode) {
-    const w = Math.min(400, Math.max(20, Math.round(settings.printCardW) || 90));
-    const h = Math.min(400, Math.max(20, Math.round(settings.printCardH) || 55));
-    if (!fitsPiece(w, h)) {
-      // say which limit was hit, or the largest card that would fit at all
-      const widest = (hh) => { let v = 19; while (v < 400 && fitsPiece(v + 1, hh)) v++; return v; };
-      const tallest = (ww) => { let v = 19; while (v < 400 && fitsPiece(ww, v + 1)) v++; return v; };
-      let tip;
-      if (widest(h) >= 20) tip = `At this height the card can be at most ${widest(h)} mm wide.`;
-      else if (tallest(w) >= 20) tip = `At this width the card can be at most ${tallest(w)} mm tall.`;
-      else {
-        let best = { w: 20, h: 20, area: 0 };
-        for (let ww = 20; ww <= 400; ww++) {
-          const hh = tallest(ww);
-          if (hh >= 20 && ww * hh > best.area) best = { w: ww, h: hh, area: ww * hh };
-        }
-        tip = `The largest card that fits is ${best.w} × ${best.h} mm.`;
+  if (!fitsPiece(card.w, card.h)) {
+    // say which limit was hit, or the largest card that would fit at all
+    const widest = (hh) => { let v = 19; while (v < 400 && fitsPiece(v + 1, hh)) v++; return v; };
+    const tallest = (ww) => { let v = 19; while (v < 400 && fitsPiece(ww, v + 1)) v++; return v; };
+    let tip;
+    if (widest(card.h) >= 20) tip = `At this height the card can be at most ${widest(card.h)} mm wide.`;
+    else if (tallest(card.w) >= 20) tip = `At this width the card can be at most ${tallest(card.w)} mm tall.`;
+    else {
+      let best = { w: 20, h: 20, area: 0 };
+      for (let ww = 20; ww <= 400; ww++) {
+        const hh = tallest(ww);
+        if (hh >= 20 && ww * hh > best.area) best = { w: ww, h: hh, area: ww * hh };
       }
-      $('#printPages').innerHTML = '';
-      $('#printInfo').textContent = `A ${w} × ${h} mm card doesn't fit on ${paper.name}`
-        + (fold ? ' with front and back side by side' : '') + '. ' + tip;
-      return;
+      tip = `The largest card that fits is ${best.w} × ${best.h} mm.`;
     }
-    fixed = { w, h };
+    $('#printInfo').textContent = `A ${card.w} × ${card.h} mm card doesn't fit on ${paper.name}`
+      + (fold ? ' with front and back side by side' : '') + '. ' + tip;
+    return;
   }
 
   await mediaReady;                              // the deck's images
   const faces = currentParsed.cards.map(printFaces);
-  const widths = fixed ? [fixed.w] : cardWidths(uw, uh, fold, fold ? 0 : DUPLEX_GAP);
-  const need = await measureFaces(faces, widths, $('#printMeasure'), fixed ? fixed.h - 2 * CARD_PAD : 0);
+  const need = await measureFaces(faces, card.w, $('#printMeasure'), card.h - 2 * CARD_PAD);
   if (job !== printJob) return;
-  const layout = layoutCards(faces, need, widths, paper, fold, MIN_IMAGE_SCALE * scale, fixed);
-  $('#printPages').innerHTML = renderPrintPages(faces, layout, paper, fold, currentParsed.title);
+  const layout = layoutCards(faces, need, paper, fold, card);
+  $('#printPages').innerHTML = renderPrintPages(faces, layout, paper, fold, currentParsed.title, shortSide);
   await imagesLoaded($('#printPages'));
   if (job !== printJob) return;
   scalePrintPreview();
   const sheets = layout.pages.length * (fold ? 1 : 2);
   const cards = faces.length;
-  $('#printInfo').textContent = `${cards} card${cards === 1 ? '' : 's'} on ${sheets} page${sheets === 1 ? '' : 's'} (${paper.name})`
-    + (fold ? '' : `, printed as ${layout.pages.length} double-sided sheet${layout.pages.length === 1 ? '' : 's'}`)
-    + (fixed ? `, each ${fixed.w} × ${fixed.h} mm` : '') + '.';
+  const shrunk = layout.pieces.filter((pc) => pc.card.scale < 0.995).length;
+  $('#printInfo').textContent = `${cards} card${cards === 1 ? '' : 's'} of ${card.w} × ${card.h} mm`
+    + ` on ${sheets} page${sheets === 1 ? '' : 's'} (${paper.name})`
+    + (fold ? '' : `, printed as ${layout.pages.length} double-sided sheet${layout.pages.length === 1 ? '' : 's'}`) + '.'
+    + (shrunk ? ` ${shrunk} card${shrunk === 1 ? ' was' : 's were'} scaled down to fit.` : '');
   $('#printGo').disabled = false;
 }
 
