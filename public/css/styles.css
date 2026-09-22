@@ -182,7 +182,10 @@ code { background: var(--panel-2); padding: 1px 6px; border-radius: 6px; font-si
 .flashcard {
   position: relative;
   background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
-  flex: 1; min-height: 120px; padding: 32px; box-shadow: var(--shadow);
+  /* fill the stage, but never shrink below the content: a tall card (big image)
+     then grows and the stage scrolls it, instead of the content spilling out of
+     the card and, being centred, partly above where scrolling can reach */
+  flex: 1 0 auto; min-height: 120px; padding: 32px; box-shadow: var(--shadow);
   display: flex; flex-direction: column; justify-content: center;
 }
 .face { font-size: 19px; overflow-wrap: break-word; word-break: break-word; }
