@@ -138,8 +138,20 @@ async function init() {
   $$('#printLayoutSeg button').forEach((b) => b.addEventListener('click', () => {
     settings.printLayout = b.dataset.layout; saveSettings(); relayout();
   }));
+  $$('#printSizeModeSeg button').forEach((b) => b.addEventListener('click', () => {
+    settings.printSizeMode = b.dataset.sizeMode; saveSettings(); relayout();
+  }));
   // Card size: show the value while dragging, lay out again once it settles
   let sizeTimer = null;
+  const cardDims = () => {
+    settings.printCardW = Number($('#printCardW').value) || settings.printCardW;
+    settings.printCardH = Number($('#printCardH').value) || settings.printCardH;
+    saveSettings();
+    clearTimeout(sizeTimer);
+    sizeTimer = setTimeout(relayout, 500);
+  };
+  $('#printCardW').addEventListener('input', cardDims);
+  $('#printCardH').addEventListener('input', cardDims);
   $('#printSize').addEventListener('input', (e) => {
     settings.printScale = Number(e.target.value); saveSettings();
     $('#printSizeValue').textContent = settings.printScale + '%';

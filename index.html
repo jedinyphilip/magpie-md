@@ -6,7 +6,7 @@
 <title>magpie.md</title>
 <link rel="icon" type="image/svg+xml" href="public/favicon.svg" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css" crossorigin="anonymous" />
-<link rel="stylesheet" href="public/css/styles.css?v=17" />
+<link rel="stylesheet" href="public/css/styles.css?v=18" />
 <style id="printPageStyle"></style>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js" crossorigin="anonymous"></script>
 </head>
@@ -328,10 +328,25 @@ The capital of France.
             <button data-layout="duplex">Double-sided</button>
           </div>
         </div>
-        <div class="cfg cfg-cards print-size">
+        <div class="cfg">
+          <label>Cards</label>
+          <div class="seg" id="printSizeModeSeg">
+            <button data-size-mode="fit">Fit to content</button>
+            <button data-size-mode="fixed">Same size</button>
+          </div>
+        </div>
+        <div class="cfg cfg-cards print-size" id="printScaleCfg">
           <label>Card size <span class="count-value" id="printSizeValue"></span></label>
           <input type="range" id="printSize" min="60" max="160" step="5" value="100"
                  aria-label="Card size: larger text and pictures, more pages" />
+        </div>
+        <div class="cfg print-dims hidden" id="printDimsCfg">
+          <label>Every card (mm)</label>
+          <div class="dims">
+            <input type="number" id="printCardW" min="20" max="400" step="1" aria-label="Card width in mm" />
+            <span>×</span>
+            <input type="number" id="printCardH" min="20" max="400" step="1" aria-label="Card height in mm" />
+          </div>
         </div>
       </div>
       <p class="hint" id="printHint"></p>
@@ -375,17 +390,17 @@ The capital of France.
 <!-- scripts in load order - no modules, so file:// works. public/vendor/ (sql.js, zstd)
      is loaded on demand by apkg.js. On every release bump ?v= on all of these and the
      stylesheet together: the app reloads itself when the live app.js ?v= changes. -->
-<script src="public/js/src/util.js?v=17"></script>
-<script src="public/js/src/config.js?v=17"></script>
-<script src="public/js/src/store.js?v=17"></script>
-<script src="public/js/src/media.js?v=17"></script>
-<script src="public/js/src/markdown.js?v=17"></script>
-<script src="public/js/src/deck.js?v=17"></script>
-<script src="public/js/src/apkg.js?v=17"></script>
-<script src="public/js/src/print.js?v=17"></script>
-<script src="public/js/src/samples.js?v=17"></script>
-<script src="public/js/src/study.js?v=17"></script>
-<script src="public/js/src/views.js?v=17"></script>
-<script src="public/js/app.js?v=17"></script>
+<script src="public/js/src/util.js?v=18"></script>
+<script src="public/js/src/config.js?v=18"></script>
+<script src="public/js/src/store.js?v=18"></script>
+<script src="public/js/src/media.js?v=18"></script>
+<script src="public/js/src/markdown.js?v=18"></script>
+<script src="public/js/src/deck.js?v=18"></script>
+<script src="public/js/src/apkg.js?v=18"></script>
+<script src="public/js/src/print.js?v=18"></script>
+<script src="public/js/src/samples.js?v=18"></script>
+<script src="public/js/src/study.js?v=18"></script>
+<script src="public/js/src/views.js?v=18"></script>
+<script src="public/js/app.js?v=18"></script>
 </body>
 </html>

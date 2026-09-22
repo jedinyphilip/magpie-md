@@ -175,9 +175,16 @@ back keeps the progress while editing a front starts that card fresh.
 Letter), a layout and a card size, then print, or choose *Save as PDF* in the print
 dialog. Keep the scale at 100%.
 
-**Card size** (60-160%) scales the text and how large pictures must print. Cards are
-still sized to their content, so a larger setting gives bigger, easier-to-read cards on
-more pages, and a smaller one fits more cards per page.
+**Cards** chooses how the cards are sized:
+
+- *Fit to content* (default): every card gets the smallest size that fits it, so a
+  deck ends up with cards of a few different sizes. The **Card size** slider
+  (60-160%) scales the text and how large pictures must print, so a larger setting
+  gives bigger, easier-to-read cards on more pages.
+- *Same size*: you give a width and height in mm and every card is exactly that,
+  for pre-cut cards or a tidy stack. Content that doesn't fit a card is scaled down
+  to it, pictures included; content that is smaller sits centred with space around
+  it. A size that can't fit the page is refused, with the largest one that does.
 
 - **Fold-over** (default): each card is printed front and back side by side. Cut it
   out along its outline and fold it on the dashed line. Works on any printer.

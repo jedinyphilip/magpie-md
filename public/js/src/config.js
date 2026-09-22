@@ -1,7 +1,7 @@
 'use strict';
 // settings
 
-const settings = Object.assign({ theme: 'dark', mode: 'flip', order: 'weighted', hints: 'show', count: 'all', shuffleAnswers: 'on', session: 'once', printPaper: 'a4', printLayout: 'fold', printScale: 100 }, loadJSON(LS_SETTINGS, {}));
+const settings = Object.assign({ theme: 'dark', mode: 'flip', order: 'weighted', hints: 'show', count: 'all', shuffleAnswers: 'on', session: 'once', printPaper: 'a4', printLayout: 'fold', printScale: 100, printSizeMode: 'fit', printCardW: 90, printCardH: 55 }, loadJSON(LS_SETTINGS, {}));
 function saveSettings() { saveJSON(LS_SETTINGS, settings); }
 function applyTheme() { document.documentElement.setAttribute('data-theme', settings.theme); }
 
