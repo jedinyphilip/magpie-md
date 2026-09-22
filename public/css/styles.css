@@ -88,6 +88,9 @@ body.studying #studyView { display: flex; flex-direction: column; height: 100%; 
 .btn:active { transform: translateY(1px); }
 .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
 .btn.ghost:hover { background: var(--panel-2); }
+.btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.btn:disabled:hover { background: var(--accent); }
+.btn.ghost:disabled:hover { background: transparent; }
 .btn.danger { color: var(--wrong); border-color: transparent; }
 .btn.danger:hover { background: rgba(255,92,114,.12); }
 .btn.big { font-size: 16px; padding: 14px 22px; width: 100%; justify-content: center; }

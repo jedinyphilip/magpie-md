@@ -40,6 +40,12 @@ const isFullscreen = () => !!(document.fullscreenElement || document.webkitFulls
 
 function setupFullscreen() {
   const btn = $('#fullscreenBtn');
+  // iPhone Safari only lets videos go fullscreen, not pages
+  if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) {
+    btn.disabled = true;
+    btn.title = "This browser doesn't let web pages go fullscreen";
+    return;
+  }
   const sync = () => {
     btn.innerHTML = isFullscreen() ? ICON_COMPRESS : ICON_EXPAND;
     btn.title = isFullscreen() ? 'Exit fullscreen' : 'Enter fullscreen';
@@ -83,7 +89,7 @@ async function init() {
   $('#homeLink').addEventListener('click', renderHome);
 
   // import. Phone file pickers only offer files whose type matches accept, and
-  // iOS has no type for .apkg, so Anki packages show greyed out. On touch
+  // iOS has no type for .apkg, so Anki packages show greyed out there. On touch
   // devices let any file be picked (importFiles goes by the extension anyway).
   if (matchMedia('(pointer: coarse)').matches) $('#fileInput').removeAttribute('accept');
   $('#importBtn').addEventListener('click', () => $('#fileInput').click());
