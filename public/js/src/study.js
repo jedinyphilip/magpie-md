@@ -82,13 +82,15 @@ function renderCard() {
   s.mc = surface === 'choice' ? (settings.shuffleAnswers === 'on' ? shuffleChoices(mc) : mc) : null;
   s.selected = new Set();
 
+  // Hints (Flip and Type answer): Hide leaves MC options and cloze
+  // {{answer::hint}} hints off the front. In Choice the options are the answer.
+  const hideHints = s.mode !== 'choice' && settings.hints === 'hide';
+
   // Build the front HTML, the revealed answer HTML, and the typed grading target.
   let frontHtml, backHtml;
   if (cloze) {
     // Blank the deletions on the front, fill them on the back; text after ---
     // (Anki's "Extra") shows as added context below the answer.
-    // Flip with Hints: Hide drops the {{answer::hint}} hints, like it drops MC options
-    const hideHints = s.mode === 'flip' && settings.hints === 'hide';
     frontHtml = clozeFace(cloze.template, hideHints ? cloze.answers.map(() => '<span class="cloze">[ … ]</span>') : cloze.blanks);
     backHtml = clozeFace(cloze.template, cloze.reveals);
     if (card.back) backHtml += md2html(card.back);
@@ -98,11 +100,12 @@ function renderCard() {
     if (surface === 'choice') {
       frontMd = mc.question;               // options become clickable rows
       backMd = mc.explanation;
-    } else if (mc && (surface === 'type' || settings.hints === 'hide')) {
-      // MC with options hidden: show just the question, use the explanation
-      // as the answer (rebuilding it from the options is brittle).
+    } else if (mc && (surface === 'type' || hideHints)) {
+      // MC typed, or with its options hidden: use the explanation as the answer
+      // (rebuilding it from the options is brittle). Typing the letter or the
+      // option text both count.
       const correct = mc.options.filter((o) => mc.correct.has(o.label));
-      frontMd = mc.question;
+      frontMd = hideHints ? mc.question : card.front;
       backMd = mc.explanation || card.back;
       s.typeTarget = [...mc.correct].join(', ') + '\n' + correct.map((o) => o.text).join('\n');
     } else {

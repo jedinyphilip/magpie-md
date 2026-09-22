@@ -169,7 +169,7 @@ function syncSegs() {
     b.disabled = !currentSupport.hints;
     b.title = currentSupport.hints ? '' : UNSUPPORTED.hints;
   });
-  $('#hintsCfg').classList.toggle('hidden', mode !== 'flip');  // hints only matter in flip
+  $('#hintsCfg').classList.toggle('hidden', mode === 'choice');  // in Choice the options are the answer
   $$('#shuffleSeg button').forEach((b) => b.classList.toggle('active', b.dataset.shuffle === settings.shuffleAnswers));
   $('#shuffleCfg').classList.toggle('hidden', mode !== 'choice');  // only choice shows options
   $$('#sessionSeg button').forEach((b) => b.classList.toggle('active', b.dataset.session === settings.session));
