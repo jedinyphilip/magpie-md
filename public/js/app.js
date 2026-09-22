@@ -82,7 +82,10 @@ async function init() {
   // home nav
   $('#homeLink').addEventListener('click', renderHome);
 
-  // import
+  // import. Phone file pickers only offer files whose type matches accept, and
+  // iOS has no type for .apkg, so Anki packages show greyed out. On touch
+  // devices let any file be picked (importFiles goes by the extension anyway).
+  if (matchMedia('(pointer: coarse)').matches) $('#fileInput').removeAttribute('accept');
   $('#importBtn').addEventListener('click', () => $('#fileInput').click());
   $('#fileInput').addEventListener('change', (e) => { importFiles(e.target.files); e.target.value = ''; });
 
