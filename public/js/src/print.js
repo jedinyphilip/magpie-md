@@ -11,6 +11,7 @@ const PRINT_MARGIN = 8;                          // mm; most printers can't reac
 const CARD_PAD = 4;                              // mm inside each face
 const MIN_CARD_W = 40;                           // mm; narrower cards are too cramped for text
 const MIN_IMAGE_SCALE = 0.5;                     // images print at least half their natural size, so text in them stays legible
+const BASE_FONT = 9.5;                           // pt; the Card size slider scales this and MIN_IMAGE_SCALE
 const DUPLEX_GAP = 4;                            // mm; a slightly shifted back still lands on its card
 const EPS = 0.01;
 
@@ -88,12 +89,12 @@ async function measureFaces(faces, widths, stage) {
 
 // Smallest card (by area) that fits the content and stays card-shaped (height
 // 0.55-1.25x the width), and whose printed piece fits on the page. Only widths
-// that show the card's images legibly count; if none do, the widest one.
+// that show the card's images at least minImg of their size count; if none do, the widest one.
 // Content too long for any of those gets the widest card, as tall as the page
 // allows, shrunk if even that isn't enough.
-function cardSize(need, widths, fits) {
+function cardSize(need, widths, fits, minImg) {
   const onPage = widths.filter((w) => fits(w, 1));
-  const legible = onPage.filter((w) => need[w].img >= MIN_IMAGE_SCALE);
+  const legible = onPage.filter((w) => need[w].img >= minImg);
   const usable = legible.length ? legible : onPage.slice(-1);
   let best = null;
   for (const w of usable) {
@@ -154,7 +155,7 @@ function packPieces(pieces, binW, binH, gap) {
 }
 
 // Card sizes, pieces and pages for the current deck and options.
-function layoutCards(faces, need, widths, paper, fold) {
+function layoutCards(faces, need, widths, paper, fold, minImg = MIN_IMAGE_SCALE) {
   const uw = paper.w - 2 * PRINT_MARGIN, uh = paper.h - 2 * PRINT_MARGIN;
   const piece = (w, h) => (fold ? [2 * w, h] : [w, h]);
   const fits = (w, h) => {
@@ -162,7 +163,7 @@ function layoutCards(faces, need, widths, paper, fold) {
     return (a <= uw && b <= uh) || (a <= uh && b <= uw);
   };
   const pieces = faces.map((f, i) => {
-    const size = cardSize(need[i], widths, fits);
+    const size = cardSize(need[i], widths, fits, minImg);
     const [w, h] = piece(size.w, size.h);
     return { i, w, h, card: size };
   });
@@ -225,6 +226,11 @@ async function buildPrintView() {
   const job = ++printJob;
   const paper = PAPER[settings.printPaper] || PAPER.a4;
   const fold = settings.printLayout !== 'duplex';
+  // Card size: scales the text and how large pictures must print; cards follow
+  const scale = (settings.printScale || 100) / 100;
+  $('#printView').style.setProperty('--pfont', BASE_FONT * scale + 'pt');
+  $('#printSize').value = settings.printScale || 100;
+  $('#printSizeValue').textContent = (settings.printScale || 100) + '%';
   $$('#printPaperSeg button').forEach((b) => b.classList.toggle('active', b.dataset.paper === settings.printPaper));
   $$('#printLayoutSeg button').forEach((b) => b.classList.toggle('active', b.dataset.layout === settings.printLayout));
   $('#printHint').textContent = fold
@@ -241,7 +247,7 @@ async function buildPrintView() {
   const widths = cardWidths(paper.w - 2 * PRINT_MARGIN, paper.h - 2 * PRINT_MARGIN, fold, fold ? 0 : DUPLEX_GAP);
   const need = await measureFaces(faces, widths, $('#printMeasure'));
   if (job !== printJob) return;
-  const layout = layoutCards(faces, need, widths, paper, fold);
+  const layout = layoutCards(faces, need, widths, paper, fold, MIN_IMAGE_SCALE * scale);
   $('#printPages').innerHTML = renderPrintPages(faces, layout, paper, fold, currentParsed.title);
   await imagesLoaded($('#printPages'));
   if (job !== printJob) return;

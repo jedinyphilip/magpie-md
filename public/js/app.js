@@ -138,6 +138,14 @@ async function init() {
   $$('#printLayoutSeg button').forEach((b) => b.addEventListener('click', () => {
     settings.printLayout = b.dataset.layout; saveSettings(); relayout();
   }));
+  // Card size: show the value while dragging, lay out again once it settles
+  let sizeTimer = null;
+  $('#printSize').addEventListener('input', (e) => {
+    settings.printScale = Number(e.target.value); saveSettings();
+    $('#printSizeValue').textContent = settings.printScale + '%';
+    clearTimeout(sizeTimer);
+    sizeTimer = setTimeout(relayout, 250);
+  });
   window.addEventListener('resize', () => { if (!$('#printView').classList.contains('hidden')) scalePrintPreview(); });
 
   $$('#modeSeg button').forEach((b) => b.addEventListener('click', () => {

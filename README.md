@@ -172,8 +172,12 @@ back keeps the progress while editing a front starts that card fresh.
 ## Printing cards
 
 *Print / PDF* on a deck opens a preview of the printed pages. Pick the paper (A4 or
-Letter) and a layout, then print, or choose *Save as PDF* in the print dialog. Keep the
-scale at 100%.
+Letter), a layout and a card size, then print, or choose *Save as PDF* in the print
+dialog. Keep the scale at 100%.
+
+**Card size** (60-160%) scales the text and how large pictures must print. Cards are
+still sized to their content, so a larger setting gives bigger, easier-to-read cards on
+more pages, and a smaller one fits more cards per page.
 
 - **Fold-over** (default): each card is printed front and back side by side. Cut it
   out along its outline and fold it on the dashed line. Works on any printer.
